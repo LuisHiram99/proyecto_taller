@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from handler import usuarios
+from handler import usuarios, clientes, carros
 
 app = FastAPI(
     title="Taller API",
@@ -19,6 +19,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(usuarios.router, prefix="/api/v1", tags=["usuarios"])
+app.include_router(clientes.router, prefix="/api/v1", tags=["clientes"])
+app.include_router(carros.router, prefix="/api/v1", tags=["carros"])
 
 @app.get("/")
 async def root():

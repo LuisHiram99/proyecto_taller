@@ -26,9 +26,6 @@ class Usuario(Base):
     usuario_id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
     apellido = Column(String(100), nullable=False)
-    # Use the existing Postgres enum type name 'rol_enum' and do not attempt
-    # to create it from SQLAlchemy (create_type=False) to avoid type name
-    # mismatches with the DB.
     rol = Column(
         PGEnum(RolEnum, name="rol_enum", create_type=False),
         nullable=False,

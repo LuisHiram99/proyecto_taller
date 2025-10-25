@@ -57,11 +57,22 @@ class ClienteCarro(ClienteCarroBase):
 class ClienteCreate(ClienteBase):
     pass
 
+class ClienteUpdate(BaseModel):
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
+    telefono: Optional[str] = None
+    correo: Optional[str] = None
+
 class UsuarioCreate(UsuarioBase):
     pass
 
 class CarroCreate(CarroBase):
     pass
+
+class CarroUpdate(BaseModel):
+    año: Optional[int] = None
+    marca: Optional[str] = None
+    modelo: Optional[str] = None
 
 class ClienteCarroCreate(ClienteCarroBase):
     pass
