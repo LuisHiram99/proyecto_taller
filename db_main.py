@@ -1,21 +1,23 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from database import async_session, engine, Base
+from backend.src.db.database import async_session, engine, Base
 from models import Usuario
 from sqlalchemy import text
+from contextlib import asynccontextmanager
 
-app = FastAPI()
-
-# Dependencia para obtener sesión
-async def get_session() -> AsyncSession:
-    async with async_session() as session:
-        yield session
-
-@app.on_event("startup")
-async def startup():
-    # Crea tablas si no existen
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Al iniciar la app
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    yield
+    # liberar recursos si fuera necesario
+
+app = FastAPI(lifespan=lifespan, root_path="/api/v1")
+
+async def get_session():
+    async with async_session() as session:
+        yield session
 
 @app.get("/")
 async def root():

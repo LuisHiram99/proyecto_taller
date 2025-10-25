@@ -23,3 +23,14 @@ async_session = sessionmaker(
 # Base para los modelos
 Base = declarative_base()
 
+# Dependency
+async def get_db():
+    async with async_session() as session:
+        try:
+            yield session
+            await session.commit()
+        except:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
