@@ -59,12 +59,22 @@ psql -U <tu_usuario> -d taller_db -f 008_trabajo_piezas.sql
 psql -U <tu_usuario> -d taller_db -f 009_trabajo_usuarios.sql
 ```
 
-3. Configurar la conexión a la base de datos:
-   - Abrir el archivo `backend/src/db/database.py`
-   - Modificar la variable `DATABASE_URL` con tus credenciales:
-   ```python
-   DATABASE_URL = "postgresql+asyncpg://usuario:contraseña@localhost:5432/taller_db"
+3. Configurar las variables de entorno:
+   - Copiar el archivo de ejemplo `.env.example` a `.env`:
+   ```bash
+   cd backend/src
+   cp .env.example .env
    ```
+   - Editar el archivo `.env` con tus credenciales:
+   ```env
+   DB_USER=tu_usuario
+   DB_PASSWORD=tu_contraseña
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=taller_db
+   ```
+   
+   Nota: El archivo `.env` está incluido en `.gitignore` para evitar exponer credenciales sensibles.
 
 ## Ejecutar el Servidor
 
