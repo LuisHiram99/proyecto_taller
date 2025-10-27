@@ -35,7 +35,6 @@ class ClienteCarroBase(BaseModel):
 class Cliente(ClienteBase):
     cliente_id: int
     
-    # Pydantic v2: allow building model from ORM/attribute access
     model_config = {"from_attributes": True}
 
 class Usuario(UsuarioBase):
@@ -76,3 +75,7 @@ class CarroUpdate(BaseModel):
 
 class ClienteCarroCreate(ClienteCarroBase):
     pass
+
+class ClienteCarroUpdate(ClienteCarroBase):
+    pass
+
