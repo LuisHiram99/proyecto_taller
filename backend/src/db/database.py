@@ -8,9 +8,14 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 import os
+from pathlib import Path
 
-# Cargar variables de entorno desde .env
-load_dotenv()
+# Get the project root directory (2 levels up from database.py)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+# Load environment variables from config/.env
+env_path = PROJECT_ROOT / 'config' / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Obtener variables de entorno
 DB_USER = os.getenv("DB_USER")
