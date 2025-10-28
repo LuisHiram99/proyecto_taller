@@ -17,11 +17,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+api_route = "/api/v1"
 # Include routers
-app.include_router(usuarios.router, prefix="/api/v1", tags=["usuarios"])
-app.include_router(clientes.router, prefix="/api/v1", tags=["clientes"])
-app.include_router(carros.router, prefix="/api/v1", tags=["carros"])
-app.include_router(carros_clientes.router, prefix="/api/v1", tags=["carros_clientes"])
+app.include_router(usuarios.router, prefix=api_route, tags=["usuarios"])
+app.include_router(clientes.router, prefix=api_route, tags=["clientes"])
+app.include_router(carros.router, prefix=api_route, tags=["carros"])
+app.include_router(carros_clientes.router, prefix=api_route, tags=["carros_clientes"])
 
 @app.get("/")
 async def root():
