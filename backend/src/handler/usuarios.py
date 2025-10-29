@@ -2,18 +2,28 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from typing import List
+from passlib.context import CryptContext
+
 
 from db import models, schemas, database
 from db.database import get_db
 
 router = APIRouter()
 
+# password hashing context
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
 @router.post("/usuarios/", response_model=schemas.Usuario)
 async def create_usuario(usuario: schemas.UsuarioCreate, db: AsyncSession = Depends(get_db)):
     """
     Create a new usuario
     """
-    db_usuario = models.Usuario(**usuario.model_dump())
+    data = usuario.model_dump()
+    # remove password before creating the SQLAlchemy model (we store hashed password)
+    plain_password = data.pop("password", None)
+    db_usuario = models.Usuario(**data)
+    if plain_password:
+        db_usuario.hashpassword = pwd_context.hash(plain_password)
     db.add(db_usuario)
     await db.commit()
     await db.refresh(db_usuario)
@@ -44,7 +54,7 @@ async def read_usuario(usuario_id: int, db: AsyncSession = Depends(get_db)):
     return db_usuario
 
 @router.put("/usuarios/{usuario_id}", response_model=schemas.Usuario)
-async def update_usuario(usuario_id: int, usuario: schemas.UsuarioCreate, db: AsyncSession = Depends(get_db)):
+async def update_usuario(usuario_id: int, usuario: schemas.UsuarioUpdate, db: AsyncSession = Depends(get_db)):
     """
     Update a usuario's information
     """
@@ -55,9 +65,16 @@ async def update_usuario(usuario_id: int, usuario: schemas.UsuarioCreate, db: As
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario not found")
         
-    for field, value in usuario.model_dump().items():
+    update_data = usuario.model_dump(exclude_unset=True)
+    # handle password specially
+    if "password" in update_data:
+        plain = update_data.pop("password")
+        if plain:
+            db_usuario.hashpassword = pwd_context.hash(plain)
+
+    for field, value in update_data.items():
         setattr(db_usuario, field, value)
-        
+
     await db.commit()
     await db.refresh(db_usuario)
     return db_usuario

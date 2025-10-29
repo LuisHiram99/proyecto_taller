@@ -23,10 +23,6 @@ class Taller(Base):
     horario_apertura = Column(String(20))
     horario_cierre = Column(String(20))
 
-    piezas = relationship("PiezaTaller", back_populates="taller")
-    usuarios = relationship("Usuario", back_populates="taller")
-    clientes = relationship("Cliente", back_populates="taller")
-
 
 class Cliente(Base):
     __tablename__ = "clientes"
@@ -38,8 +34,6 @@ class Cliente(Base):
     correo = Column(String)
     taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
 
-    taller = relationship("Taller", back_populates="clientes")
-    carros = relationship("ClienteCarro", back_populates="cliente")
 
 class Usuario(Base):
     __tablename__ = "usuarios"
@@ -57,9 +51,6 @@ class Usuario(Base):
     hashpassword = Column(String(60), nullable=False)  # <- contraseña hashed
     taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
 
-    taller = relationship("Taller", back_populates="usuarios")
-    trabajos = relationship("TrabajoUsuarios", back_populates="usuario")
-
 class Carro(Base):
     __tablename__ = "carros"
 
@@ -68,8 +59,6 @@ class Carro(Base):
     marca = Column(String(100), nullable=False)
     modelo = Column(String(100), nullable=False)
     
-    clientes = relationship("ClienteCarro", back_populates="carro")
-    piezas = relationship("PiezaCarro", back_populates="carro")
 
 class ClienteCarro(Base):
     __tablename__ = "cliente_carro"
@@ -80,9 +69,6 @@ class ClienteCarro(Base):
     placas = Column(String(20), nullable=False)
     color = Column(String(50))
     
-    
-    cliente = relationship("Cliente", back_populates="carros")
-    carro = relationship("Carro", back_populates="clientes")
 
 class Pieza(Base):
     __tablename__ = "piezas"
@@ -92,10 +78,6 @@ class Pieza(Base):
     marca = Column(String(100), nullable=False)
     descripcion = Column(String(255))
     categoria = Column(String(100))
-
-    taller = relationship("PiezaTaller", back_populates="pieza")
-    trabajo = relationship("TrabajoPiezas", back_populates="pieza")
-    carro = relationship("PiezaCarro", back_populates="pieza")
 
 class PiezaTaller(Base):
     __tablename__ = "pieza_taller"
@@ -110,8 +92,6 @@ class PiezaTaller(Base):
         PrimaryKeyConstraint('pieza_id', 'taller_id', name='pieza_taller_pk'),
     )
 
-    piezas_taller = relationship("PiezaTaller", back_populates="pieza")
-    taller = relationship("Taller", back_populates="piezas")
 
 class PiezaCarro(Base):
     __tablename__ = "pieza_carro"
@@ -123,8 +103,6 @@ class PiezaCarro(Base):
         PrimaryKeyConstraint('carro_id', 'pieza_id', name='carro_piezas_pk'),
     )
 
-    pieza = relationship("Pieza", back_populates="carro")
-    carro = relationship("Carro", back_populates="piezas")
 
 class Trabajo(Base):
     __tablename__ = "trabajos"
@@ -142,10 +120,6 @@ class Trabajo(Base):
         nullable=False,
     )
 
-    cliente_carro = relationship("ClienteCarro")
-    taller = relationship("Taller")
-    piezas = relationship("TrabajoPiezas", back_populates="trabajo")
-
 class TrabajoPiezas(Base):
     __tablename__ = "trabajo_piezas"
 
@@ -156,9 +130,6 @@ class TrabajoPiezas(Base):
     __table_args__ = (
         PrimaryKeyConstraint('trabajo_id', 'pieza_id', name='trabajo_piezas_pk'),
     )
-
-    piezas = relationship("Pieza", back_populates="trabajo")
-    trabajo = relationship("Trabajo", back_populates="piezas")
 
 class TrabajoUsuarios(Base):
     __tablename__ = "trabajo_usuarios"
@@ -171,7 +142,5 @@ class TrabajoUsuarios(Base):
         PrimaryKeyConstraint('trabajo_id', 'usuario_id', name='trabajo_usuarios_pk'),
     )
 
-    trabajo = relationship("Trabajo", back_populates="usuarios")
-    usuario = relationship("Usuario", back_populates="trabajos")
 
 

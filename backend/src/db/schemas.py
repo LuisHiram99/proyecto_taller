@@ -17,8 +17,11 @@ class ClienteBase(BaseModel):
 class UsuarioBase(BaseModel):
     nombre: str
     apellido: str
+    telefono: Optional[str] = None
+    correo: Optional[EmailStr] = None
     rol: RolEnum
-    acronimo: str
+    pseudonimo: Optional[str] = None
+    taller_id: int
 
 class CarroBase(BaseModel):
     año: int
@@ -39,7 +42,7 @@ class Cliente(ClienteBase):
 
 class Usuario(UsuarioBase):
     usuario_id: int
-    
+
     model_config = {"from_attributes": True}
 
 class Carro(CarroBase):
@@ -62,8 +65,25 @@ class ClienteUpdate(BaseModel):
     telefono: Optional[str] = None
     correo: Optional[str] = None
 
-class UsuarioCreate(UsuarioBase):
-    pass
+class UsuarioCreate(BaseModel):
+    nombre: str
+    apellido: str
+    telefono: Optional[str] = None
+    correo: Optional[EmailStr] = None
+    password: str  # plain password for create; will be hashed in the handler
+    rol: RolEnum
+    pseudonimo: Optional[str] = None
+    taller_id: int
+
+class UsuarioUpdate(BaseModel):
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
+    telefono: Optional[str] = None
+    correo: Optional[EmailStr] = None
+    password: Optional[str] = None
+    rol: Optional[RolEnum] = None
+    pseudonimo: Optional[str] = None
+    taller_id: Optional[int] = None
 
 class CarroCreate(CarroBase):
     pass
