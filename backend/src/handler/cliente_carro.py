@@ -8,7 +8,7 @@ from db.database import get_db
 
 router = APIRouter()
 
-@router.post("/carros_clientes/", response_model=schemas.ClienteCarro)
+@router.post("/cliente_carro/", response_model=schemas.ClienteCarro)
 async def create_cliente_carro(cliente_carro: schemas.ClienteCarroCreate, db: AsyncSession = Depends(get_db)):
     """
     Create a new cliente_carro
@@ -27,7 +27,7 @@ async def create_cliente_carro(cliente_carro: schemas.ClienteCarroCreate, db: As
     await db.refresh(db_cliente_carro)
     return db_cliente_carro
 
-@router.get("/carros_clientes/", response_model=List[schemas.ClienteCarro])
+@router.get("/cliente_carro/", response_model=List[schemas.ClienteCarro])
 async def read_clientes_carros(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
     """
     Get all clientes_carros with pagination
@@ -39,7 +39,7 @@ async def read_clientes_carros(skip: int = 0, limit: int = 100, db: AsyncSession
     return clientes_carros
 
 
-@router.get("/carros_clientes/{cliente_carro_id}", response_model=schemas.ClienteCarro)
+@router.get("/cliente_carro/{cliente_carro_id}", response_model=schemas.ClienteCarro)
 async def read_cliente_carro(cliente_carro_id: int, db: AsyncSession = Depends(get_db)):
     """
     Get a specific cliente_carro by ID
@@ -52,7 +52,7 @@ async def read_cliente_carro(cliente_carro_id: int, db: AsyncSession = Depends(g
         raise HTTPException(status_code=404, detail="ClienteCarro not found")
     return db_cliente_carro
 
-@router.put("/carros_clientes/{cliente_carro_id}", response_model=schemas.ClienteCarro)
+@router.put("/cliente_carro/{cliente_carro_id}", response_model=schemas.ClienteCarro)
 async def update_cliente_carro(cliente_carro_id: int, cliente_carro: schemas.ClienteCarroUpdate, db: AsyncSession = Depends(get_db)):
     """
     Update an existing cliente_carro (partial updates allowed)
@@ -84,7 +84,7 @@ async def update_cliente_carro(cliente_carro_id: int, cliente_carro: schemas.Cli
     await db.refresh(db_cliente_carro)
     return db_cliente_carro
 
-@router.delete("/carros_clientes/{cliente_carro_id}", response_model=schemas.ClienteCarro)
+@router.delete("/cliente_carro/{cliente_carro_id}", response_model=schemas.ClienteCarro)
 async def delete_cliente_carro(cliente_carro_id: int, db: AsyncSession = Depends(get_db)):
     """
     Delete a cliente_carro

@@ -60,7 +60,7 @@ async def update_carro(carro_id: int, carro: schemas.CarroUpdate, db: AsyncSessi
     carro_data = carro.model_dump(exclude_unset=True)
     for key, value in carro_data.items():
         setattr(db_carro, key, value)
-
+ 
     await db.commit()
     await db.refresh(db_carro)
     return db_carro
