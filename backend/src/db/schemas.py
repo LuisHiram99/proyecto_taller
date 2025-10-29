@@ -13,6 +13,7 @@ class ClienteBase(BaseModel):
     apellido: str
     telefono: str
     correo: Optional[str] = None
+    taller_id: int
 
 class UsuarioBase(BaseModel):
     nombre: str
@@ -64,6 +65,7 @@ class ClienteUpdate(BaseModel):
     apellido: Optional[str] = None
     telefono: Optional[str] = None
     correo: Optional[str] = None
+    taller_id: Optional[int] = None
 
 class UsuarioCreate(BaseModel):
     nombre: str
