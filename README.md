@@ -12,7 +12,7 @@ De esta manera, los equipos de trabajo pueden optimizar tiempos, reducir errores
 
 *   [Como empezar](#como-empezar)
     *   [Requerimientos del Backend](backend/README.md)
-    *   [Requerimientos del Frontend](#requerimientos-del-frontend)
+    *   [Requerimientos del Frontend](frontend/README.md)
 *   [Licencia](#licencia)
 
 
