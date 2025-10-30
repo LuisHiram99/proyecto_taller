@@ -113,6 +113,8 @@ curl "http://localhost:8000/api/v1/usuarios/"
 ```
 backend/
 ├── requirements.txt
+├── alembic               # Migraciones de la base de datos
+├── config                # Configuración de las variables
 ├── src/
 │   ├── main.py           # Punto de entrada de la aplicación
 │   ├── db/
