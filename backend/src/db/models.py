@@ -41,14 +41,23 @@ class Usuario(Base):
     usuario_id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
     apellido = Column(String(100), nullable=False)
-    telefono = Column(String(20))
     correo = Column(String(100))
     rol = Column(
         PGEnum(RolEnum, name="rol_enum", create_type=False),
         nullable=False,
     )
-    pseudonimo = Column(String(50))
     hashpassword = Column(String(60), nullable=False)  # <- contraseña hashed
+    taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
+
+class Trabajadores(Base):
+    __tablename__ = "trabajadores"
+
+    trabajador_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    nombre = Column(String(100), nullable=False)
+    apellido = Column(String(100), nullable=False)
+    telefono = Column(String(20))
+    puesto = Column(String(100), nullable=False)
+    pseudonimo = Column(String(50))
     taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
 
 class Carro(Base):
@@ -131,15 +140,15 @@ class TrabajoPiezas(Base):
         PrimaryKeyConstraint('trabajo_id', 'pieza_id', name='trabajo_piezas_pk'),
     )
 
-class TrabajoUsuarios(Base):
-    __tablename__ = "trabajo_usuarios"
+class TrabajoTrabajadores(Base):
+    __tablename__ = "trabajo_trabajadores"
 
     trabajo_id = Column(Integer, ForeignKey("trabajos.trabajo_id"), nullable=False)
-    usuario_id = Column(Integer, ForeignKey("usuarios.usuario_id"), nullable=False)
+    trabajador_id = Column(Integer, ForeignKey("trabajadores.trabajador_id"), nullable=False)
     rol_trabajo = Column(String(100), nullable=False)
 
     __table_args__ = (
-        PrimaryKeyConstraint('trabajo_id', 'usuario_id', name='trabajo_usuarios_pk'),
+        PrimaryKeyConstraint('trabajo_id', 'trabajador_id', name='trabajo_usuarios_pk'),
     )
 
 
