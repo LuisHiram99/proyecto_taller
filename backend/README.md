@@ -42,24 +42,7 @@ psql -U postgres
 CREATE DATABASE taller_db;
 ```
 
-2. Crear las tablas y tipos necesarios:
-```bash
-# Desde el directorio raíz del proyecto
-cd backend/src/db/schema
-
-# Ejecutar los scripts SQL en orden
-psql -U <tu_usuario> -d taller_db -f 001_clientes.sql
-psql -U <tu_usuario> -d taller_db -f 002_usuarios.sql
-psql -U <tu_usuario> -d taller_db -f 003_carros.sql
-psql -U <tu_usuario> -d taller_db -f 004_cliente_carro.sql
-psql -U <tu_usuario> -d taller_db -f 005_piezas.sql
-psql -U <tu_usuario> -d taller_db -f 006_pieza_carro.sql
-psql -U <tu_usuario> -d taller_db -f 007_trabajos.sql
-psql -U <tu_usuario> -d taller_db -f 008_trabajo_piezas.sql
-psql -U <tu_usuario> -d taller_db -f 009_trabajo_usuarios.sql
-```
-
-3. Configurar las variables de entorno:
+2. Configurar las variables de entorno:
    - Copiar el archivo de ejemplo `.env.example` a `.env`:
    ```bash
    cd backend/src
@@ -76,14 +59,19 @@ psql -U <tu_usuario> -d taller_db -f 009_trabajo_usuarios.sql
    
    Nota: El archivo `.env` está incluido en `.gitignore` para evitar exponer credenciales sensibles.
 
+3. Crear las tablas y tipos necesarios con alembic:
+```bash
+# Desde el directorio del backend correr lo siguiente:
+alembic upgrade head
+
+```
+- Nota: Esto aplica todas las migraciones de la base de datos
+
 ## Ejecutar el Servidor
 
 ```bash
-# Navegar al directorio src
-cd backend/src
-
 # Ejecutar el servidor con recarga automática
-PYTHONPATH=$PYTHONPATH:. uvicorn main:app --reload
+uvicorn main:app --reload
 ```
 
 El servidor estará disponible en: http://localhost:8000

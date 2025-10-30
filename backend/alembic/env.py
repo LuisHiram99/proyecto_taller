@@ -6,6 +6,8 @@ from sqlalchemy import pool
 from alembic import context
 import sys
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 # env.py is at <repo>/backend/alembic/env.py — add the repo root to sys.path
 repo_root = Path(__file__).resolve().parents[2]
@@ -17,6 +19,24 @@ from backend.src.db import models
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Load environment variables from backend/config/.env and set the sqlalchemy.url
+# so Alembic uses the same DB configuration as the application.
+try:
+    env_path = repo_root / 'backend' / 'config' / '.env'
+    load_dotenv(dotenv_path=env_path)
+    DB_USER = os.getenv('DB_USER')
+    DB_PASSWORD = os.getenv('DB_PASSWORD')
+    DB_HOST = os.getenv('DB_HOST', 'localhost')
+    DB_PORT = os.getenv('DB_PORT', '5432')
+    DB_NAME = os.getenv('DB_NAME')
+    if DB_USER and DB_PASSWORD and DB_NAME:
+        # Use sync psycopg2 driver for Alembic/SQLAlchemy Engine
+        db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        config.set_main_option('sqlalchemy.url', db_url)
+except Exception:
+    # If anything fails, fall back to the value already present in alembic.ini
+    pass
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
