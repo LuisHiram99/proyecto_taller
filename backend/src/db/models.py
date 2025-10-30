@@ -1,155 +1,162 @@
-from sqlalchemy import Column, ForeignKeyConstraint, Integer, PrimaryKeyConstraint, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, String, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from .database import Base
 import enum
 
-class RolEnum(enum.Enum):
+
+class RoleEnum(enum.Enum):
     admin = "admin"
-    gerente = "gerente"
-    trabajador = "trabajador"
-
-class EstadoEnum(enum.Enum):
-    pendiente = "pendiente"
-    en_proceso = "en_proceso"
-    completado = "completado"
-
-class Taller(Base):
-    __tablename__ = "talleres"
-
-    taller_id = Column(Integer, primary_key=True, index=True)
-    nombre_taller = Column(String(100), nullable=False)
-    direccion = Column(String(200))
-    horario_apertura = Column(String(20))
-    horario_cierre = Column(String(20))
+    manager = "manager"
+    worker = "worker"
 
 
-class Cliente(Base):
-    __tablename__ = "clientes"
-
-    cliente_id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(100), nullable=False)
-    apellido = Column(String(100), nullable=False)
-    telefono = Column(String(20), nullable=False)
-    correo = Column(String)
-    taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
+class StatusEnum(enum.Enum):
+    pending = "pending"
+    in_progress = "in_progress"
+    completed = "completed"
 
 
-class Usuario(Base):
-    __tablename__ = "usuarios"
+class Workshop(Base):
+    __tablename__ = "workshops"
 
-    usuario_id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(100), nullable=False)
-    apellido = Column(String(100), nullable=False)
-    correo = Column(String(100))
-    rol = Column(
-        PGEnum(RolEnum, name="rol_enum", create_type=False),
+    workshop_id = Column(Integer, primary_key=True, index=True)
+    workshop_name = Column(String(100), nullable=False)
+    address = Column(String(200))
+    opening_hours = Column(String(20))
+    closing_hours = Column(String(20))
+
+
+class Customer(Base):
+    __tablename__ = "customers"
+
+    customer_id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(String(20), nullable=False)
+    updated_at = Column(String(20), nullable=False)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    phone = Column(String(20), nullable=False)
+    email = Column(String)
+    workshop_id = Column(Integer, ForeignKey("workshops.workshop_id"), nullable=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    user_id = Column(Integer, primary_key=True, index=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    email = Column(String(100))
+    role = Column(
+        PGEnum(RoleEnum, name="role_enum", create_type=False),
         nullable=False,
     )
-    hashpassword = Column(String(60), nullable=False)  # <- contraseña hashed
-    taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
+    hashed_password = Column(String(100), nullable=False)
+    workshop_id = Column(Integer, ForeignKey("workshops.workshop_id"), nullable=False, default=1)
 
-class Trabajadores(Base):
-    __tablename__ = "trabajadores"
 
-    trabajador_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    nombre = Column(String(100), nullable=False)
-    apellido = Column(String(100), nullable=False)
-    telefono = Column(String(20))
-    puesto = Column(String(100), nullable=False)
-    pseudonimo = Column(String(50))
-    taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
+class Worker(Base):
+    __tablename__ = "workers"
 
-class Carro(Base):
-    __tablename__ = "carros"
+    worker_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    phone = Column(String(20))
+    position = Column(String(100), nullable=False)
+    nickname = Column(String(50))
+    workshop_id = Column(Integer, ForeignKey("workshops.workshop_id"), nullable=False)
 
-    carro_id = Column(Integer, primary_key=True, index=True)
-    año = Column(Integer, nullable=False)
-    marca = Column(String(100), nullable=False)
-    modelo = Column(String(100), nullable=False)
-    
 
-class ClienteCarro(Base):
-    __tablename__ = "cliente_carro"
+class Car(Base):
+    __tablename__ = "cars"
 
-    cliente_carro_id = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, ForeignKey("clientes.cliente_id"), nullable=False)
-    carro_id = Column(Integer, ForeignKey("carros.carro_id"), nullable=False)
-    placas = Column(String(20), nullable=False)
+    car_id = Column(Integer, primary_key=True, index=True)
+    year = Column(Integer, nullable=False)
+    brand = Column(String(100), nullable=False)
+    model = Column(String(100), nullable=False)
+
+
+class CustomerCar(Base):
+    __tablename__ = "customer_car"
+
+    customer_car_id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.customer_id"), nullable=False)
+    car_id = Column(Integer, ForeignKey("cars.car_id"), nullable=False)
+    license_plate = Column(String(20), nullable=False)
     color = Column(String(50))
-    
 
-class Pieza(Base):
-    __tablename__ = "piezas"
 
-    pieza_id = Column(Integer, primary_key=True, index=True)
-    nombre_pieza = Column(String(100), nullable=False)
-    marca = Column(String(100), nullable=False)
-    descripcion = Column(String(255))
-    categoria = Column(String(100))
+class Part(Base):
+    __tablename__ = "parts"
 
-class PiezaTaller(Base):
-    __tablename__ = "pieza_taller"
+    part_id = Column(Integer, primary_key=True, index=True)
+    part_name = Column(String(100), nullable=False)
+    brand = Column(String(100), nullable=False)
+    description = Column(String(255))
+    category = Column(String(100))
 
-    pieza_id = Column(Integer, ForeignKey("piezas.pieza_id"), nullable=False)
-    taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
-    cantidad = Column(Integer, nullable=False, default=1)
-    precio_compra = Column(Integer, nullable=False)
-    precio_venta = Column(Integer, nullable=False)
+
+class PartWorkshop(Base):
+    __tablename__ = "part_workshop"
+
+    part_id = Column(Integer, ForeignKey("parts.part_id"), nullable=False)
+    workshop_id = Column(Integer, ForeignKey("workshops.workshop_id"), nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+    purchase_price = Column(Integer, nullable=False)
+    sale_price = Column(Integer, nullable=False)
 
     __table_args__ = (
-        PrimaryKeyConstraint('pieza_id', 'taller_id', name='pieza_taller_pk'),
+        PrimaryKeyConstraint("part_id", "workshop_id", name="part_workshop_pk"),
     )
 
 
-class PiezaCarro(Base):
-    __tablename__ = "pieza_carro"
+class PartCar(Base):
+    __tablename__ = "part_car"
 
-    carro_id = Column(Integer, ForeignKey("carros.carro_id"), nullable=False)
-    pieza_id = Column(Integer, ForeignKey("piezas.pieza_id"), nullable=False)
+    car_id = Column(Integer, ForeignKey("cars.car_id"), nullable=False)
+    part_id = Column(Integer, ForeignKey("parts.part_id"), nullable=False)
 
     __table_args__ = (
-        PrimaryKeyConstraint('carro_id', 'pieza_id', name='carro_piezas_pk'),
+        PrimaryKeyConstraint("car_id", "part_id", name="car_parts_pk"),
     )
 
 
-class Trabajo(Base):
-    __tablename__ = "trabajos"
+class Job(Base):
+    __tablename__ = "jobs"
 
-    trabajo_id = Column(Integer, primary_key=True, index=True)
-    taller_id = Column(Integer, ForeignKey("talleres.taller_id"), nullable=False)
-    cliente_carro_id = Column(Integer, ForeignKey("cliente_carro.cliente_carro_id"), nullable=False)
+    job_id = Column(Integer, primary_key=True, index=True)
+    workshop_id = Column(Integer, ForeignKey("workshops.workshop_id"), nullable=False)
+    customer_car_id = Column(Integer, ForeignKey("customer_car.customer_car_id"), nullable=False)
 
-    facturo = Column(String(100), nullable=False)
-    descripcion_servicio = Column(String(255))
-    fecha_inicio = Column(String(20), nullable=False)
-    fecha_fin = Column(String(20))
-    estado = Column(
-        PGEnum(EstadoEnum, name="estado_enum", create_type=True),
+    invoice = Column(String(100), nullable=False)
+    service_description = Column(String(255))
+    start_date = Column(String(20), nullable=False)
+    end_date = Column(String(20))
+    status = Column(
+        PGEnum(StatusEnum, name="status_enum", create_type=True),
         nullable=False,
     )
 
-class TrabajoPiezas(Base):
-    __tablename__ = "trabajo_piezas"
 
-    trabajo_id = Column(Integer, ForeignKey("trabajos.trabajo_id"), nullable=False)
-    pieza_id = Column(Integer, ForeignKey("piezas.pieza_id"), nullable=False)
-    cantidad_usada = Column(Integer, default=1)
+class JobParts(Base):
+    __tablename__ = "job_parts"
 
-    __table_args__ = (
-        PrimaryKeyConstraint('trabajo_id', 'pieza_id', name='trabajo_piezas_pk'),
-    )
-
-class TrabajoTrabajadores(Base):
-    __tablename__ = "trabajo_trabajadores"
-
-    trabajo_id = Column(Integer, ForeignKey("trabajos.trabajo_id"), nullable=False)
-    trabajador_id = Column(Integer, ForeignKey("trabajadores.trabajador_id"), nullable=False)
-    rol_trabajo = Column(String(100), nullable=False)
+    job_id = Column(Integer, ForeignKey("jobs.job_id"), nullable=False)
+    part_id = Column(Integer, ForeignKey("parts.part_id"), nullable=False)
+    quantity_used = Column(Integer, default=1)
 
     __table_args__ = (
-        PrimaryKeyConstraint('trabajo_id', 'trabajador_id', name='trabajo_usuarios_pk'),
+        PrimaryKeyConstraint("job_id", "part_id", name="job_parts_pk"),
     )
 
 
+class JobWorkers(Base):
+    __tablename__ = "job_workers"
 
+    job_id = Column(Integer, ForeignKey("jobs.job_id"), nullable=False)
+    worker_id = Column(Integer, ForeignKey("workers.worker_id"), nullable=False)
+    job_role = Column(String(100), nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("job_id", "worker_id", name="job_workers_pk"),
+    )
