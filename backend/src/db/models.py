@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, PrimaryKeyConstraint
+from sqlalchemy import Column, ForeignKey, Integer, String, PrimaryKeyConstraint, DateTime, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from .database import Base
@@ -44,6 +44,8 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, onupdate=func.now(), server_default=func.now(), nullable=False)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     email = Column(String(100))
