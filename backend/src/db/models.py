@@ -31,8 +31,8 @@ class Customer(Base):
     __tablename__ = "customers"
 
     customer_id = Column(Integer, primary_key=True, index=True)
-    created_at = Column(String(20), nullable=False)
-    updated_at = Column(String(20), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now(), server_default=func.now())
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=False)

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from handler import users, customers, cars, customer_car, workshops
+from handler.current_user import current_user
 from auth import auth
 from typing import Annotated
 
@@ -24,6 +25,7 @@ api_route = "/api/v1"
 # Include routers
 app.include_router(auth.router, prefix=api_route, tags=["auth"])
 app.include_router(users.router, prefix=api_route, tags=["users"])
+app.include_router(current_user.router, prefix=api_route, tags=["current_user"])
 app.include_router(customers.router, prefix=api_route, tags=["customers"])
 app.include_router(cars.router, prefix=api_route, tags=["cars"])
 app.include_router(customer_car.router, prefix=api_route, tags=["customer_car"])

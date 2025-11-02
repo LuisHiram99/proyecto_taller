@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-from typing import List
+from typing import List, Annotated
+from auth.auth import get_current_user
+
 
 
 from db import models, schemas
@@ -9,7 +11,10 @@ from db.database import get_db
 
 router = APIRouter()
 
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
+
+# ---------------- All workshop endpoints ----------------
 @router.post("/workshops/", response_model=schemas.Workshop)
 async def create_workshop(workshop: schemas.WorkshopCreate, db: AsyncSession = Depends(get_db)):
     """

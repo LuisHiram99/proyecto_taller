@@ -96,7 +96,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: db
         if not user:
             raise credentials_exception
         # role is an Enum; expose as string value
-        return {'email': user.email, 'user_id': user.user_id, 'role': getattr(user.role, 'value', user.role)}
+        return {'email': user.email, 'user_id': user.user_id, 'role': getattr(user.role, 'value', user.role), 'workshop_id': user.workshop_id}
     except JWTError:
         raise credentials_exception
     
