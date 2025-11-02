@@ -1,0 +1,102 @@
+from datetime import timedelta, datetime
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from passlib.context import CryptContext
+from db.database import get_db
+from db.models import User
+from starlette import status
+from db.database import async_session
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Configuración de seguridad
+SECRET_KEY = "your_secret_key"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
+class CreateUserRequest(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+db_dependency = Annotated[AsyncSession, Depends(get_db)]
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def create_user(user: CreateUserRequest, db: db_dependency):
+    create_user_model = User(
+        first_name=user.first_name,
+        last_name=user.last_name,  
+        email=user.email,
+        hashed_password=pwd_context.hash(user.password)
+    )
+
+    db.add(create_user_model)
+    await db.commit()
+    await db.refresh(create_user_model)
+    return create_user_model
+
+@router.post("/token", response_model=Token)
+async def login_for_access_token(db: db_dependency, form_data: OAuth2PasswordRequestForm = Depends()):
+    email = form_data.username
+    password = form_data.password
+    user = await authenticate_user(db, email, password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = create_access_token(user.email, user.user_id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+
+    return {"access_token": token, "token_type": "bearer"}
+
+async def authenticate_user(db: db_dependency, email: str, password: str):
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user or not pwd_context.verify(password, user.hashed_password):
+        return False
+    return user
+
+def create_access_token(email: str, user_id: int, expires_delta: timedelta | None = None):
+    encode = {"sub": email, "user_id": user_id}
+    expires = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
+    encode.update({"exp": expires})
+    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: db_dependency):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        user_id: int = payload.get("user_id")
+        if email is None or user_id is None:
+            raise credentials_exception
+        # Load full user to include role for authorization checks
+        result = await db.execute(select(User).where(User.user_id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise credentials_exception
+        # role is an Enum; expose as string value
+        return {'email': user.email, 'user_id': user.user_id, 'role': getattr(user.role, 'value', user.role)}
+    except JWTError:
+        raise credentials_exception
+    

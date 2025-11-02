@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from handler import users, customers, cars, customer_car, workshops
+from auth import auth
+from typing import Annotated
 
 app = FastAPI(
     title="Taller API",
@@ -20,6 +22,7 @@ app.add_middleware(
 
 api_route = "/api/v1"
 # Include routers
+app.include_router(auth.router, prefix=api_route, tags=["auth"])
 app.include_router(users.router, prefix=api_route, tags=["users"])
 app.include_router(customers.router, prefix=api_route, tags=["customers"])
 app.include_router(cars.router, prefix=api_route, tags=["cars"])

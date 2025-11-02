@@ -48,12 +48,12 @@ class User(Base):
     updated_at = Column(DateTime, onupdate=func.now(), server_default=func.now(), nullable=False)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
-    email = Column(String(100))
+    email = Column(String(100), nullable=False, unique=True)
     role = Column(
         PGEnum(RoleEnum, name="role_enum", create_type=False),
-        nullable=False,
+        nullable=False, default=RoleEnum.manager,
     )
-    hashed_password = Column(String(100), nullable=False)
+    hashed_password = Column(String(250), nullable=False)
     workshop_id = Column(Integer, ForeignKey("workshops.workshop_id"), nullable=False, default=1)
 
 
