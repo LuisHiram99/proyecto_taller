@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 from typing import Annotated
+from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -11,12 +12,22 @@ from db.database import get_db
 from db.models import User
 from starlette import status
 from db.database import async_session
+from secrets import token_hex
+import os
+from pathlib import Path
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Configuración de seguridad
-SECRET_KEY = "your_secret_key"
-ALGORITHM = "HS256"
+# Get the project root directory (2 levels up from database.py)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+# Load environment variables from config/.env
+env_path = PROJECT_ROOT / 'config' / '.env'
+load_dotenv(dotenv_path=env_path)
+
+SECRET_KEY = os.getenv("SECRET_KEY", token_hex(32))
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
