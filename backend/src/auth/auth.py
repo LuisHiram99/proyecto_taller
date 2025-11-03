@@ -111,3 +111,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: db
     except JWTError:
         raise credentials_exception
     
+
+
+def is_admin(user: dict = Depends(get_current_user)):
+    '''
+    Check if the current user has admin role
+    '''
+    if user["role"] != "admin":
+        return False
+    return True

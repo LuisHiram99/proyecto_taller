@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from enum import Enum
@@ -9,7 +10,11 @@ class RoleEnum(str, Enum):
     worker = "worker"
 
 
+
+
+# --------------------- Customer ----------------------
 # Base Pydantic Models (For Create/Update operations)
+
 class CustomerBase(BaseModel):
     first_name: str
     last_name: str
@@ -17,6 +22,41 @@ class CustomerBase(BaseModel):
     email: Optional[str] = None
     workshop_id: int
 
+class Customer(CustomerBase):
+    customer_id: int
+    workshop_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+# Models for creating new records
+class CustomerCreate(CustomerBase):
+    workshop_id: int
+
+class CustomerUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    workshop_id: Optional[int] = None
+
+class CustomerCreateForWorkshop(BaseModel):
+    first_name: str
+    last_name: str
+    phone: str
+    email: Optional[str] = None
+
+
+class CustomerUpdateForWorkshop(BaseModel):
+    first_name: str
+    last_name: str
+    phone: str
+    email: Optional[str] = None
+
+# --------------------- End of Customer ----------------------
+
+# --------------------- User ----------------------
 
 class UserBase(BaseModel):
     first_name: str
@@ -24,27 +64,6 @@ class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     role: RoleEnum
     workshop_id: int
-
-
-class CarBase(BaseModel):
-    year: int
-    brand: str
-    model: str
-
-
-class CustomerCarBase(BaseModel):
-    customer_id: int
-    car_id: int
-    license_plate: str
-    color: Optional[str] = None
-
-
-# Models for responses (including IDs)
-class Customer(CustomerBase):
-    customer_id: int
-
-    model_config = {"from_attributes": True}
-
 
 class User(UserBase):
     user_id: int
@@ -60,32 +79,6 @@ class User(UserBase):
             "workshop_id": 1
         }}
     }
-
-
-class Car(CarBase):
-    car_id: int
-
-    model_config = {"from_attributes": True}
-
-
-class CustomerCar(CustomerCarBase):
-    customer_car_id: int
-
-    model_config = {"from_attributes": True}
-
-
-# Models for creating new records
-class CustomerCreate(CustomerBase):
-    pass
-
-
-class CustomerUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    workshop_id: Optional[int] = None
-
 
 class UserCreate(BaseModel):
     first_name: str
@@ -104,7 +97,6 @@ class UserCreate(BaseModel):
         "workshop_id": 1
     }}}
 
-
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -112,6 +104,31 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role: Optional[RoleEnum] = None
     workshop_id: Optional[int] = None
+
+
+class CarBase(BaseModel):
+    year: int
+    brand: str
+    model: str
+
+
+class CustomerCarBase(BaseModel):
+    customer_id: int
+    car_id: int
+    license_plate: str
+    color: Optional[str] = None
+
+
+class Car(CarBase):
+    car_id: int
+
+    model_config = {"from_attributes": True}
+
+
+class CustomerCar(CustomerCarBase):
+    customer_car_id: int
+
+    model_config = {"from_attributes": True}
 
 
 class CarCreate(CarBase):
