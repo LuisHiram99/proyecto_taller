@@ -5,10 +5,47 @@ from handler.current_user import current_user
 from auth import auth
 from typing import Annotated
 
+
+description = """
+API created for the Taller project.
+"""
+
+tags_metadata = [
+    {
+        "name": "auth",
+        "description": "Operations related to user authentication and token management.",
+    },
+    {
+        "name": "users",
+        "description": "Operations related to user management. Only accessible by admin users.",
+    },
+    {
+        "name": "current_user",
+        "description": "Operations related to the currently authenticated user.",
+    },
+    {
+        "name": "customers",
+        "description": "Operations related to customer management. Only accessible by admin users.",
+    },
+    {
+        "name": "cars",
+        "description": "Operations related to car management. Only accessible by admin users.",
+    },
+    {
+        "name": "customer_car",
+        "description": "Operations related to managing the association between customers and their cars. Only accessible by admin users.",
+    },
+    {
+        "name": "workshops",
+        "description": "Operations related to workshop management. Only accessible by admin users.",
+    },
+]
+
 app = FastAPI(
     title="Taller API",
-    description="API for Taller project",
-    version="1.0.0"
+    description=description,
+    version="1.0.0",
+    openapi_tags=tags_metadata
 )
 
 # Configure CORS

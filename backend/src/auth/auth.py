@@ -16,10 +16,11 @@ from secrets import token_hex
 import os
 from pathlib import Path
 
+
+
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Configuración de seguridad
-# Get the project root directory (2 levels up from database.py)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Load environment variables from config/.env
