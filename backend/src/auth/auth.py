@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 from typing import Annotated
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi import APIRouter, Depends, HTTPException, Form, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -112,6 +112,14 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: db
     except JWTError:
         raise credentials_exception
     
+
+async def admin_required(current_user = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admins only"
+        )
+    return current_user
 
 
 def is_admin(user: dict = Depends(get_current_user)):

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from typing import List, Annotated
-from auth.auth import get_current_user
+from auth.auth import get_current_user, admin_required
 
 
 

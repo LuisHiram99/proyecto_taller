@@ -7,9 +7,6 @@ from db import models, schemas
 from exceptions.exceptions import notFoundException, fetchErrorException
 
 
-router = APIRouter()
-
-
 # ---------------- All user functions ----------------
 
 def current_user_role(user: dict = Depends(get_current_user)):
@@ -18,7 +15,7 @@ def current_user_role(user: dict = Depends(get_current_user)):
     '''
     return user["role"]
 
-async def get_all_users_query(db: AsyncSession, current_user: dict, skip: int = 0, limit: int = 100):
+async def get_all_users(current_user: dict, db: AsyncSession, skip: int = 0, limit: int = 100):
     '''
     Construct a query to get all users with pagination
     '''
@@ -32,7 +29,7 @@ async def get_all_users_query(db: AsyncSession, current_user: dict, skip: int = 
         raise fetchErrorException
     
 
-async def get_user_by_id_query(db: AsyncSession, current_user: dict, user_id: int):
+async def get_user_by_id(current_user: dict, db: AsyncSession, user_id: int):
     '''
     Construct a query to get a user by ID
     '''
@@ -52,12 +49,12 @@ async def get_user_by_id_query(db: AsyncSession, current_user: dict, user_id: in
         print(f"Database error in get_user_by_id_query: {e}")
         raise fetchErrorException
 
-async def update_user_query(db: AsyncSession, current_user: dict, user_data: dict, user_update: schemas.UserUpdate):
+async def update_user(current_user: dict, user_id: int, db: AsyncSession, user_update: schemas.UserUpdate):
     '''
     Construct a query to update a user's information
     '''
     try:
-        user_data = user_data
+        user_data = await get_user_by_id(current_user, db, user_id)
             # Prepare update data
         update_data = user_update.model_dump(exclude_unset=True)
         # handle password hashing specially
@@ -73,4 +70,32 @@ async def update_user_query(db: AsyncSession, current_user: dict, user_data: dic
         await db.refresh(user_data)
         return user_data
     except:
+        raise fetchErrorException
+    
+async def delete_user(current_user: dict, db: AsyncSession, user_id: int):
+    '''
+    Construct a query to delete a user
+    '''
+    try:
+        # Get the user to be deleted
+        result = await db.execute(
+            select(models.User).filter(models.User.user_id == user_id)
+        )
+        db_user = result.scalar_one_or_none()
+        # If user not found, raise 404
+        if db_user is None:
+            raise notFoundException
+
+        # Delete the user
+        await db.execute(
+            delete(models.User).where(models.User.user_id == user_id)
+        )
+
+        # Commit the transaction
+        await db.commit()
+        return db_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in delete_user_query: {e}")
         raise fetchErrorException
