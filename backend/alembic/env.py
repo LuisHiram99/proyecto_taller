@@ -9,21 +9,33 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-# env.py is at <repo>/backend/alembic/env.py — add the repo root to sys.path
-repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(repo_root))
-
-from backend.src.db.database import Base
-from backend.src.db import models
+# env.py is at <repo>/backend/alembic/env.py — add the src directory to sys.path
+# In Docker, PYTHONPATH is already set to /app/src, so we can import directly
+# For local development, we need to add the path
+try:
+    from db.database import Base
+    from db import models
+except ModuleNotFoundError:
+    # Fallback for local development
+    repo_root = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(repo_root / 'backend' / 'src'))
+    from db.database import Base
+    from db import models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-# Load environment variables from backend/config/.env and set the sqlalchemy.url
+# Load environment variables from config/.env and set the sqlalchemy.url
 # so Alembic uses the same DB configuration as the application.
 try:
-    env_path = repo_root / 'backend' / 'config' / '.env'
+    # In Docker, config is at /app/config/.env
+    # For local dev, it's at backend/config/.env relative to repo root
+    env_path = Path('/app/config/.env')
+    if not env_path.exists():
+        # Fallback for local development
+        env_path = Path(__file__).resolve().parents[1] / 'config' / '.env'
+    
     load_dotenv(dotenv_path=env_path)
     DB_USER = os.getenv('DB_USER')
     DB_PASSWORD = os.getenv('DB_PASSWORD')

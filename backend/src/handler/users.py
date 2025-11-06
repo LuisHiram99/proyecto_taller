@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from typing import Annotated, List
 from auth.auth import get_current_user, pwd_context
-
+from repositories.user_repository import *
+from exceptions.exceptions import notAdminException, notFoundException
 
 from db import models, schemas, database
 from db.database import get_db
@@ -11,6 +12,7 @@ from db.database import get_db
 router = APIRouter()
 
 user_dependency = Annotated[dict, Depends(get_current_user)]
+
 
 # ---------------- All user endpoints ----------------
 
@@ -21,13 +23,9 @@ async def read_users(user: user_dependency, skip: int = 0, limit: int = 100, db:
     """
     # if the current user is not admin, raise 403
     if current_user_role(user) != "admin":
-        raise HTTPException(status_code=403, detail="Operation not permitted")
+        raise notAdminException
     # Get all users from the database
-    result = await db.execute(
-        select(models.User).offset(skip).limit(limit)
-    )
-    # Get user data
-    users = result.scalars().all()
+    users = await get_all_users_query(db, user, skip, limit)
     return users
 
 @router.get("/users/{user_id}", response_model=schemas.User, summary="Get user by ID")
@@ -37,17 +35,10 @@ async def read_user(user: user_dependency, user_id: int, db: AsyncSession = Depe
     """
     # if the current user is not admin, raise 403
     if current_user_role(user) != "admin":
-        raise HTTPException(status_code=403, detail="Operation not permitted")
+        raise notAdminException
     # Get the user from the database
-    result = await db.execute(
-        select(models.User).filter(models.User.user_id == user_id)
-    )
-    # Get user data
-    db_user = result.scalar_one_or_none()
-    # If user not found, raise 404
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
+    user_data = await get_user_by_id_query(db, user, user_id)
+    return user_data
 
 @router.put("/users/{user_id}", response_model=schemas.User, summary="Update user by ID")
 async def update_user(
@@ -61,30 +52,16 @@ async def update_user(
     """
     # if the current user is not admin, raise 403
     if current_user_role(current_user) != "admin":
-        raise HTTPException(status_code=403, detail="Operation not permitted")
+        raise notAdminException
 
     # Get the user to be updated
-    result = await db.execute(
-        select(models.User).filter(models.User.user_id == user_id)
-    )
-    db_user = result.scalar_one_or_none()
+    user_data = await get_user_by_id_query(db, current_user, user_id)
     # If user not found, raise 404
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+    if user_data is None:
+        raise notFoundException
     # Prepare update data
-    update_data = user.model_dump(exclude_unset=True)
-    # handle password hashing specially
-    if "password" in update_data:
-        plain = update_data.pop("password")
-        if plain:
-            db_user.hashed_password = pwd_context.hash(plain)
-    # Update other fields
-    for field, value in update_data.items():
-        setattr(db_user, field, value)
-    # Commit the transaction
-    await db.commit()
-    await db.refresh(db_user)
-    return db_user
+    updated_user = await update_user_query(db, current_user, user_data, user)
+    return updated_user
 
 @router.delete("/users/{user_id}", response_model=schemas.User, summary="Delete user by ID")
 async def delete_user(user: user_dependency, user_id: int, db: AsyncSession = Depends(get_db)):
@@ -112,9 +89,3 @@ async def delete_user(user: user_dependency, user_id: int, db: AsyncSession = De
     # Commit the transaction
     await db.commit()
     return db_user
-
-def current_user_role(user: dict = Depends(get_current_user)):
-    '''
-    Get the role of the current user from the token payload
-    '''
-    return user["role"]

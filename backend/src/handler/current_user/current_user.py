@@ -89,7 +89,7 @@ async def create_current_user_workshop(
     Create a workshop associated with the currently authenticated user
     """
 
-    if get_current_user_workshop_id(user) is not 1:
+    if get_current_user_workshop_id(user) != 1:
         raise HTTPException(status_code=400, detail="User already has a workshop")
 
     create_workshop_model = models.Workshop(
@@ -137,7 +137,7 @@ async def update_current_user_workshop(
     """
     Update the workshop associated with the currently authenticated user
     """
-    if get_current_user_workshop_id(user) is 1:
+    if get_current_user_workshop_id(user) == 1:
         raise HTTPException(status_code=400, detail="User has no workshop to update")
 
     result = await db.execute(
