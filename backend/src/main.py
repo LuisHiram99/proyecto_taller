@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from auth import auth
+from typing import Annotated
+
 from handler.users import users
 from handler.cars import cars
 from handler.customers import customers
 from handler.workshops import workshops
-
-from handler import customer_car
+from handler.customer_car import customer_car
 from handler.current_user import current_user
-from auth import auth
-from typing import Annotated
 
 
 description = """
