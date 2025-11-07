@@ -114,6 +114,9 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: db
     
 
 async def admin_required(current_user = Depends(get_current_user)):
+    '''
+    Dependency to ensure the current user has admin role
+    '''
     if current_user["role"] != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
