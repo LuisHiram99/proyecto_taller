@@ -73,6 +73,8 @@ class Car(Base):
     __tablename__ = "cars"
 
     car_id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now(), server_default=func.now())
     year = Column(Integer, nullable=False)
     brand = Column(String(100), nullable=False)
     model = Column(String(100), nullable=False)

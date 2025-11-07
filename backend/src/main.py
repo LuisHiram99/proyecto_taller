@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from handler.users import users
-from handler import customers, cars, customer_car, workshops
+from handler.cars import cars
+from handler.customers import customers
+
+from handler import customer_car, workshops
 from handler.current_user import current_user
 from auth import auth
 from typing import Annotated

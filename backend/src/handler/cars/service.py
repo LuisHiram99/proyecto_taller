@@ -1,0 +1,93 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
+
+from auth.auth import get_current_user, pwd_context, admin_required
+from db import models, schemas
+from exceptions.exceptions import notFoundException, fetchErrorException
+
+# ---------------- All cars functions ----------------
+async def create_car(car: schemas.CarCreate, db: AsyncSession, current_user: dict):
+    '''
+    Construct a query to create a new car
+    '''
+    try:
+        db_car = models.Car(**car.model_dump())
+        db.add(db_car)
+        await db.commit()
+        await db.refresh(db_car)
+        return db_car
+    except Exception as e:
+        print(f"Database error in create_car: {e}")
+        raise fetchErrorException
+    
+async def get_all_cars(current_user: dict, db: AsyncSession, skip: int = 0, limit: int = 100):
+    '''
+    Construct a query to get all cars with pagination
+    '''
+    try:
+        result = await db.execute(
+            select(models.Car).offset(skip).limit(limit)
+        )
+        cars = result.scalars().all()
+        return cars
+    except:
+        raise fetchErrorException
+    
+async def get_car_by_id(current_user: dict, db: AsyncSession, car_id: int):
+    '''
+    Construct a query to get a car by ID
+    '''
+    try:
+        result = await db.execute(
+            select(models.Car).filter(models.Car.car_id == car_id)
+        )
+        # Get car data
+        db_car = result.scalar_one_or_none()
+        # If car not found, raise 404
+        if db_car is None:
+            raise notFoundException
+        return db_car
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in get_car_by_id: {e}")
+        raise fetchErrorException
+    
+async def update_car(current_user: dict, car_id: int, db: AsyncSession, car_update: schemas.CarUpdate):
+    '''
+    Construct a query to update a car's information
+    '''
+    try:
+        car_data = await get_car_by_id(current_user, db, car_id)
+            # Prepare update data
+        update_data = car_update.model_dump(exclude_unset=True)
+        # Update fields
+        for key, value in update_data.items():
+            setattr(car_data, key, value)
+        await db.commit()
+        await db.refresh(car_data)
+        return car_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in update_car: {e}")
+        raise fetchErrorException
+    
+
+async def delete_car(current_user: dict, db: AsyncSession, car_id: int):
+    '''
+    Construct a query to delete a car
+    '''
+    try:
+        car_data = await get_car_by_id(current_user, db, car_id)
+        await db.execute(
+            delete(models.Car).where(models.Car.car_id == car_id)
+        )
+        await db.commit()
+        return car_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in delete_car: {e}")
+        raise fetchErrorException
