@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from auth import auth
 from typing import Annotated
@@ -9,6 +12,7 @@ from handler.customers import customers
 from handler.workshops import workshops
 from handler.customer_car import customer_car
 from handler.current_user import current_user
+from handler.rate_limiter import limiter
 
 
 description = """
@@ -62,6 +66,11 @@ app.add_middleware(
     allow_headers=["*"],
 ) 
 
+
+# Rate limiting wiring
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 api_route = "/api/v1"
 # Include routers
