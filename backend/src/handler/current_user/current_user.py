@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from typing import List, Annotated
 from auth.auth import get_current_user, admin_required, pwd_context
 from auth.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
+from . import service
+from ..rate_limiter import limiter
 
 
 
@@ -18,21 +20,18 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 # ---------------- Current user's info endpoints ----------------
 
 @router.get("/", response_model=schemas.User)
-async def read_current_user(user: user_dependency, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def read_current_user(request: Request, user: user_dependency, db: AsyncSession = Depends(get_db)):
     """
     Get the currently authenticated user
     """
-    result = await db.execute(
-        select(models.User).filter(models.User.user_id == user["user_id"])
-    )
-    db_user = result.scalar_one_or_none()
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
+    return await service.get_current_user_info(user, db)
 
 
 @router.patch("/", response_model=schemas.CurrentUserUpdate)
+@limiter.limit("10/minute")
 async def patch_current_user(
+    request: Request,
     current_user: user_dependency,
     user: schemas.CurrentUserUpdate,           
     db: AsyncSession = Depends(get_db),
@@ -40,23 +39,12 @@ async def patch_current_user(
     """
     Partially update the currently authenticated user's information
     """
-    result = await db.execute(
-        select(models.User).filter(models.User.user_id == current_user["user_id"])
-    )
-    db_user = result.scalar_one_or_none()
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    update_data = user.model_dump(exclude_unset=True)
-    # Update only provided fields
-    for field, value in update_data.items():
-        setattr(db_user, field, value)
-    # Commit the transaction
-    await db.commit()
-    await db.refresh(db_user)
-    return db_user, update_data
+    return await service.patch_current_user_info(user, current_user, db)
 
 @router.put("/password")
+@limiter.limit("10/minute")
 async def update_current_user_password(
+    request: Request,
     current_user: user_dependency,
     password_update: schemas.CurrentUserPassword,
     db: AsyncSession = Depends(get_db),
@@ -65,63 +53,24 @@ async def update_current_user_password(
     Update the currently authenticated user's password and return a new token.
     This invalidates all existing tokens by incrementing the token version.
     """
-    result = await db.execute(
-        select(models.User).filter(models.User.user_id == current_user["user_id"])
-    )
-    db_user = result.scalar_one_or_none()
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if not pwd_context.verify(password_update.old_password, db_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Old password is incorrect")
-
-    # Update password
-    hashed_password = pwd_context.hash(password_update.new_password)
-    db_user.hashed_password = hashed_password
-    
-    # Increment token version to invalidate all existing tokens
-    db_user.token_version += 1
-
-    await db.commit()
-    await db.refresh(db_user)
-    
-    new_token = create_access_token(
-        db_user.email, 
-        db_user.user_id,
-        db_user.token_version,
-        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    
-    return {
-        "message": "Password updated successfully",
-        "access_token": new_token,
-        "token_type": "bearer"
-    }
+    return await service.update_current_user_password(password_update, current_user, db)
 
 @router.delete("/", response_model=schemas.User)
-async def delete_current_user(user: user_dependency, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def delete_current_user(request: Request, user: user_dependency, db: AsyncSession = Depends(get_db)):
     """
     Delete the currently authenticated user
     """
-    result = await db.execute(
-        select(models.User).filter(models.User.user_id == user["user_id"])
-    )
-    db_user = result.scalar_one_or_none()
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    await db.execute(
-        delete(models.User).where(models.User.user_id == user["user_id"])
-    )
-    await db.commit()
-    return db_user
+    return await service.delete_current_user_account(user, db)
 
 # ---------------- End of current user's info endpoints ----------------
 
 
 # ---------------- Current user's workshop related functions ----------------
 @router.post("/workshop/", response_model=schemas.Workshop, summary="Create workshop for current user")
+@limiter.limit("10/minute")
 async def create_current_user_workshop(
+    request: Request,
     user: user_dependency,
     workshop: schemas.WorkshopCreate,
     db: AsyncSession = Depends(get_db)
@@ -130,47 +79,24 @@ async def create_current_user_workshop(
     Create a workshop associated with the currently authenticated user
     """
 
-    if get_current_user_workshop_id(user) != 1:
-        raise HTTPException(status_code=400, detail="User already has a workshop")
+    return await service.create_current_user_workshop(user, workshop, db)
 
-    create_workshop_model = models.Workshop(
-        workshop_name=workshop.workshop_name,
-        address=workshop.address,
-        opening_hours=workshop.opening_hours,
-        closing_hours=workshop.closing_hours
-    )
-
-    db.add(create_workshop_model)
-    await db.commit()
-    await db.refresh(create_workshop_model)
-
-    # Update user's workshop_id
-    result = await db.execute(
-        select(models.User).filter(models.User.user_id == user["user_id"])
-    )
-    db_user = result.scalar_one_or_none()
-    db_user.workshop_id = create_workshop_model.workshop_id
-    await db.commit()
-    await db.refresh(db_user)
-
-    return create_workshop_model
-
-@router.get("/workshop/", response_model=List[schemas.Workshop], summary="Get current user's workshop")
-async def read_current_user_workshops(
+@router.get("/workshop/", response_model=schemas.Workshop, summary="Get current user's workshop")
+@limiter.limit("10/minute") 
+async def read_current_user_workshop(
+    request: Request,
     user: user_dependency,
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get the workshop associated with the currently authenticated user
     """
-    result = await db.execute(
-        select(models.Workshop).filter(models.Workshop.workshop_id == user["workshop_id"])
-    )
-    workshops = result.scalars().all()
-    return workshops
+    return await service.get_current_user_workshop(user, db)
 
-@router.put("/workshop/", response_model=schemas.Workshop, summary="Update current user's workshop")
+@router.patch("/workshop/", response_model=schemas.Workshop, summary="Update current user's workshop")
+@limiter.limit("10/minute")
 async def update_current_user_workshop(
+    request: Request,
     user: user_dependency,
     workshop: schemas.WorkshopUpdate,
     db: AsyncSession = Depends(get_db)
@@ -178,23 +104,7 @@ async def update_current_user_workshop(
     """
     Update the workshop associated with the currently authenticated user
     """
-    if get_current_user_workshop_id(user) == 1:
-        raise HTTPException(status_code=400, detail="User has no workshop to update")
-
-    result = await db.execute(
-        select(models.Workshop).filter(models.Workshop.workshop_id == user["workshop_id"])
-    )
-    db_workshop = result.scalar_one_or_none()
-    if db_workshop is None:
-        raise HTTPException(status_code=404, detail="Workshop not found")
-
-    update_data = workshop.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_workshop, field, value)
-
-    await db.commit()
-    await db.refresh(db_workshop)
-    return db_workshop
+    return await service.patch_current_user_workshop(user, workshop, db)
 
 # ---------------- End of current user's workshop related functions ----------------
 
@@ -202,22 +112,21 @@ async def update_current_user_workshop(
 # ---------------- Current user's workshop customers endpoint ----------------
 
 @router.get("/workshop/customers/", response_model=List[schemas.Customer], summary="Get customers of current user's workshop")
+@limiter.limit("10/minute")
 async def read_current_user_workshop_customers(
+    request: Request,
     user: user_dependency,
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get the customers associated with the currently authenticated user's workshop
     """
-    workshop_id = get_current_user_workshop_id(user)
-    result = await db.execute(
-        select(models.Customer).filter(models.Customer.workshop_id == workshop_id)
-    )
-    customers = result.scalars().all()
-    return customers
+    return await service.get_current_user_workshop_customers(user, db)
 
 @router.post("/workshop/customers/", response_model=schemas.Customer, summary="Create customer for current user's workshop")
+@limiter.limit("10/minute")
 async def create_current_user_workshop_customer(
+    request: Request,
     user: user_dependency,
     customer: schemas.CustomerCreateForWorkshop,  # Changed this
     db: AsyncSession = Depends(get_db)
@@ -225,23 +134,12 @@ async def create_current_user_workshop_customer(
     """
     Create a customer associated with the currently authenticated user's workshop
     """
-    workshop_id = get_current_user_workshop_id(user)
+    return await service.create_current_user_workshop_customer(user, customer, db)
 
-    create_customer_model = models.Customer(
-        first_name=customer.first_name,
-        last_name=customer.last_name,
-        phone=customer.phone,
-        email=customer.email,
-        workshop_id=workshop_id  # Set automatically from user's workshop
-    )
-
-    db.add(create_customer_model)
-    await db.commit()
-    await db.refresh(create_customer_model)
-    return create_customer_model
-
-@router.put("/workshop/customers/{customer_id}", response_model=schemas.Customer, summary="Update customer of current user's workshop")
-async def update_current_user_workshop_customer(
+@router.patch("/workshop/customers/{customer_id}", response_model=schemas.Customer, summary="Update customer of current user's workshop")
+@limiter.limit("10/minute")
+async def patch_current_user_workshop_customer(
+    request: Request,
     user: user_dependency,
     customer_id: int,
     customer: schemas.CustomerUpdateForWorkshop,
@@ -250,29 +148,13 @@ async def update_current_user_workshop_customer(
     """
     Update a customer associated with the currently authenticated user's workshop
     """
-    workshop_id = get_current_user_workshop_id(user)
-
-    result = await db.execute(
-        select(models.Customer).filter(
-            models.Customer.customer_id == customer_id,
-            models.Customer.workshop_id == workshop_id
-        )
-    )
-    db_customer = result.scalar_one_or_none()
-    if db_customer is None:
-        raise HTTPException(status_code=404, detail="Customer not found")
-
-    update_data = customer.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_customer, field, value)
-
-    await db.commit()
-    await db.refresh(db_customer)
-    return db_customer
+    return await service.patch_current_user_workshop_customer(user, customer_id, customer, db)
 
 
 @router.delete("/workshop/customers/{customer_id}", response_model=schemas.Customer, summary="Delete customer of current user's workshop")
+@limiter.limit("10/minute")
 async def delete_current_user_workshop_customer(
+    request: Request,
     user: user_dependency,
     customer_id: int,
     db: AsyncSession = Depends(get_db)
@@ -280,28 +162,5 @@ async def delete_current_user_workshop_customer(
     """
     Delete a customer associated with the currently authenticated user's workshop
     """
-    workshop_id = get_current_user_workshop_id(user)
-
-    result = await db.execute(
-        select(models.Customer).filter(
-            models.Customer.customer_id == customer_id,
-            models.Customer.workshop_id == workshop_id
-        )
-    )
-    db_customer = result.scalar_one_or_none()
-    if db_customer is None:
-        raise HTTPException(status_code=404, detail="Customer not found")
-
-    await db.execute(
-        delete(models.Customer).where(models.Customer.customer_id == customer_id)
-    )
-    await db.commit()
-    return db_customer
-
-
-def get_current_user_workshop_id(user: dict) -> int:
-    """
-    Utility function to get the workshop ID of the current user
-    """
-    return user.get("workshop_id")
+    return await service.delete_current_user_workshop_customer(user, customer_id, db)
 
