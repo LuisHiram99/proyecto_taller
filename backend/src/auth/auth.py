@@ -72,7 +72,7 @@ async def login_for_access_token(db: db_dependency, form_data: OAuth2PasswordReq
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    token = create_access_token(user.email, user.user_id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    token = create_access_token(user.email, user.user_id, user.token_version, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
 
     return {"access_token": token, "token_type": "bearer"}
 
@@ -83,8 +83,8 @@ async def authenticate_user(db: db_dependency, email: str, password: str):
         return False
     return user
 
-def create_access_token(email: str, user_id: int, expires_delta: timedelta | None = None):
-    encode = {"sub": email, "user_id": user_id}
+def create_access_token(email: str, user_id: int, token_version: int, expires_delta: timedelta | None = None):
+    encode = {"sub": email, "user_id": user_id, "token_version": token_version}
     expires = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
     encode.update({"exp": expires})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -100,13 +100,21 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: db
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         user_id: int = payload.get("user_id")
+        token_version: int = payload.get("token_version", 0)
+        
         if email is None or user_id is None:
             raise credentials_exception
+        
         # Load full user to include role for authorization checks
         result = await db.execute(select(User).where(User.user_id == user_id))
         user = result.scalar_one_or_none()
         if not user:
             raise credentials_exception
+        
+        # Verify token version matches current user's token version
+        if user.token_version != token_version:
+            raise credentials_exception
+        
         # role is an Enum; expose as string value
         return {'email': user.email, 'user_id': user.user_id, 'role': getattr(user.role, 'value', user.role), 'workshop_id': user.workshop_id}
     except JWTError:

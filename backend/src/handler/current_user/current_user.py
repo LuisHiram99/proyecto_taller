@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from typing import List, Annotated
-from auth.auth import get_current_user, admin_required
+from auth.auth import get_current_user, admin_required, pwd_context
+from auth.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from datetime import timedelta
 
 
 
@@ -28,14 +30,15 @@ async def read_current_user(user: user_dependency, db: AsyncSession = Depends(ge
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
-@router.put("/", response_model=schemas.User)
-async def update_current_user(
+
+@router.patch("/", response_model=schemas.CurrentUserUpdate)
+async def patch_current_user(
     current_user: user_dependency,
-    user: schemas.UserUpdate,           
+    user: schemas.CurrentUserUpdate,           
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Update the currently authenticated user's information
+    Partially update the currently authenticated user's information
     """
     result = await db.execute(
         select(models.User).filter(models.User.user_id == current_user["user_id"])
@@ -44,18 +47,56 @@ async def update_current_user(
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     update_data = user.model_dump(exclude_unset=True)
-    # handle password hashing specially
-    if "password" in update_data:
-        plain = update_data.pop("password")
-        if plain:
-            db_user.hashed_password = pwd_context.hash(plain)
-    # Update other fields
+    # Update only provided fields
     for field, value in update_data.items():
         setattr(db_user, field, value)
     # Commit the transaction
     await db.commit()
     await db.refresh(db_user)
     return db_user, update_data
+
+@router.put("/password")
+async def update_current_user_password(
+    current_user: user_dependency,
+    password_update: schemas.CurrentUserPassword,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update the currently authenticated user's password and return a new token.
+    This invalidates all existing tokens by incrementing the token version.
+    """
+    result = await db.execute(
+        select(models.User).filter(models.User.user_id == current_user["user_id"])
+    )
+    db_user = result.scalar_one_or_none()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not pwd_context.verify(password_update.old_password, db_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
+
+    # Update password
+    hashed_password = pwd_context.hash(password_update.new_password)
+    db_user.hashed_password = hashed_password
+    
+    # Increment token version to invalidate all existing tokens
+    db_user.token_version += 1
+
+    await db.commit()
+    await db.refresh(db_user)
+    
+    new_token = create_access_token(
+        db_user.email, 
+        db_user.user_id,
+        db_user.token_version,
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    
+    return {
+        "message": "Password updated successfully",
+        "access_token": new_token,
+        "token_type": "bearer"
+    }
 
 @router.delete("/", response_model=schemas.User)
 async def delete_current_user(user: user_dependency, db: AsyncSession = Depends(get_db)):

@@ -55,6 +55,7 @@ class User(Base):
     )
     hashed_password = Column(String(250), nullable=False)
     workshop_id = Column(Integer, ForeignKey("workshops.workshop_id"), nullable=False, default=1)
+    token_version = Column(Integer, nullable=False, default=0)
 
 
 class Worker(Base):

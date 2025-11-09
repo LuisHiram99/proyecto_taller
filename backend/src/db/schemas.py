@@ -105,6 +105,17 @@ class UserUpdate(BaseModel):
     role: Optional[RoleEnum] = None
     workshop_id: Optional[int] = None
 
+class CurrentUserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+class CurrentUserPassword(BaseModel):
+    old_password: str
+    new_password: str
+
+# --------------------- Car and CustomerCar ----------------------
+
 
 class CarBase(BaseModel):
     year: int
