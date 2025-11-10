@@ -56,6 +56,12 @@ async def create_user(user: CreateUserRequest, db: db_dependency):
         hashed_password=pwd_context.hash(user.password)
     )
 
+    if await email_exists(user.email, db):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+
     db.add(create_user_model)
     await db.commit()
     await db.refresh(create_user_model)
@@ -140,3 +146,11 @@ def is_admin(user: dict = Depends(get_current_user)):
     if user["role"] != "admin":
         return False
     return True
+
+async def email_exists(email: str, db: db_dependency):
+    '''
+    Check if an email already exists in the database
+    '''
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    return user is not None
