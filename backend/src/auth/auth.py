@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", token_hex(32))
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -47,7 +47,7 @@ class Token(BaseModel):
 
 db_dependency = Annotated[AsyncSession, Depends(get_db)]
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def create_user(user: CreateUserRequest, db: db_dependency):
     create_user_model = User(
         first_name=user.first_name,
@@ -67,7 +67,7 @@ async def create_user(user: CreateUserRequest, db: db_dependency):
     await db.refresh(create_user_model)
     return create_user_model
 
-@router.post("/token", response_model=Token)
+@router.post("/login", response_model=Token)
 async def login_for_access_token(db: db_dependency, form_data: OAuth2PasswordRequestForm = Depends()):
     email = form_data.username
     password = form_data.password
