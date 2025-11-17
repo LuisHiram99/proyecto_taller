@@ -5,6 +5,7 @@ from sqlalchemy import select, delete
 from auth.auth import get_current_user, pwd_context, admin_required, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
 from db import models, schemas
+import db
 from exceptions.exceptions import notFoundException, fetchErrorException
 from db.database import get_db
 
@@ -205,6 +206,193 @@ async def patch_current_user_workshop(
     return db_workshop
 
 # ---------------- End of current user's workshop related functions ----------------
+# ---------------- Current user's workshop parts endpoint ----------------
+async def create_current_user_workshop_part(
+    current_user: dict,
+    part: schemas.PartWorkshopCreate,
+    db: AsyncSession
+    ):
+    """
+    Create a part associated with the current logged-in user's workshop
+    """
+    workshop_id = get_current_user_workshop_id(current_user)
+    
+    # Check if this part already exists in the workshop
+    existing_check = await db.execute(
+        select(models.PartWorkshop)
+        .filter(
+            models.PartWorkshop.part_id == part.part_id,
+            models.PartWorkshop.workshop_id == workshop_id
+        )
+    )
+    existing_part = existing_check.scalar_one_or_none()
+    
+    if existing_part:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Part with ID {part.part_id} already exists in this workshop. Use PATCH to update it."
+        )
+    
+    create_part_model = models.PartWorkshop(
+        part_id=part.part_id,
+        quantity=part.quantity,
+        purchase_price=part.purchase_price,
+        sale_price=part.sale_price,
+        workshop_id=workshop_id  # Set automatically from user's workshop
+    )
+
+    db.add(create_part_model)
+    await db.commit()
+    await db.refresh(create_part_model)
+    
+    # Fetch the complete part data with join to return proper schema
+    result = await db.execute(
+        select(models.PartWorkshop, models.Part)
+        .join(models.Part, models.PartWorkshop.part_id == models.Part.part_id)
+        .filter(
+            models.PartWorkshop.part_id == create_part_model.part_id,
+            models.PartWorkshop.workshop_id == workshop_id
+        )
+    )
+    part_workshop, part_data = result.first()
+    
+    # Combine data from both tables
+    return schemas.PartWorkshop(
+        part_id=part_workshop.part_id,
+        workshop_id=part_workshop.workshop_id,
+        quantity=part_workshop.quantity,
+        purchase_price=part_workshop.purchase_price,
+        sale_price=part_workshop.sale_price,
+        part_name=part_data.part_name,
+        brand=part_data.brand,
+        description=part_data.description,
+        category=part_data.category
+    )
+
+async def get_current_user_workshop_parts(
+    current_user: dict,
+    db: AsyncSession,
+    skip: int = 0,
+    limit: int = 100
+):
+    """
+    Get parts associated with the current logged-in user's workshop
+    """
+    workshop_id = get_current_user_workshop_id(current_user)
+    result = await db.execute(
+        select(models.PartWorkshop, models.Part)
+        .join(models.Part, models.PartWorkshop.part_id == models.Part.part_id)
+        .filter(models.PartWorkshop.workshop_id == workshop_id)
+        .offset(skip)
+        .limit(limit)
+    )
+    parts_data = result.all()
+    
+    # Combine data from both tables
+    return [
+        schemas.PartWorkshop(
+            part_id=part_workshop.part_id,
+            workshop_id=part_workshop.workshop_id,
+            quantity=part_workshop.quantity,
+            purchase_price=part_workshop.purchase_price,
+            sale_price=part_workshop.sale_price,
+            part_name=part.part_name,
+            brand=part.brand,
+            description=part.description,
+            category=part.category
+        )
+        for part_workshop, part in parts_data
+    ]
+
+async def update_current_user_workshop_part(
+    current_user: dict,
+    part_id: int,
+    part_update: schemas.PartWorkshopUpdate,
+    db: AsyncSession
+):
+    """
+    Patch a part associated with the current logged-in user's workshop
+    """
+    workshop_id = get_current_user_workshop_id(current_user)
+
+    result = await db.execute(
+        select(models.PartWorkshop, models.Part)
+        .join(models.Part, models.PartWorkshop.part_id == models.Part.part_id)
+        .filter(
+            models.PartWorkshop.part_id == part_id,
+            models.PartWorkshop.workshop_id == workshop_id
+        )
+    )
+    part_data = result.first()
+    
+    if not part_data:
+        raise HTTPException(status_code=404, detail="Part not found in this workshop")
+    
+    part_workshop, part = part_data
+
+    update_data = part_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(part_workshop, field, value)
+
+    await db.commit()
+    await db.refresh(part_workshop)
+
+    return schemas.PartWorkshop(
+        part_id=part_workshop.part_id,
+        workshop_id=part_workshop.workshop_id,
+        quantity=part_workshop.quantity,
+        purchase_price=part_workshop.purchase_price,
+        sale_price=part_workshop.sale_price,
+        part_name=part.part_name,
+        brand=part.brand,
+        description=part.description,
+        category=part.category
+    )
+
+async def delete_current_user_workshop_part(
+    current_user: dict,
+    part_id: int,
+    db: AsyncSession
+):
+    """
+    Delete a part associated with the current logged-in user's workshop
+    """
+    workshop_id = get_current_user_workshop_id(current_user)
+
+    result = await db.execute(
+        select(models.PartWorkshop, models.Part)
+        .join(models.Part, models.PartWorkshop.part_id == models.Part.part_id)
+        .filter(
+            models.PartWorkshop.part_id == part_id,
+            models.PartWorkshop.workshop_id == workshop_id
+        )
+    )
+    part_data = result.first()
+    
+    if not part_data:
+        raise HTTPException(status_code=404, detail="Part not found in this workshop")
+    
+    part_workshop, part = part_data
+
+    await db.execute(
+        delete(models.PartWorkshop).where(
+            models.PartWorkshop.part_id == part_id,
+            models.PartWorkshop.workshop_id == workshop_id
+        )
+    )
+    await db.commit()
+    
+    return schemas.PartWorkshop(
+        part_id=part_workshop.part_id,
+        workshop_id=part_workshop.workshop_id,
+        quantity=part_workshop.quantity,
+        purchase_price=part_workshop.purchase_price,
+        sale_price=part_workshop.sale_price,
+        part_name=part.part_name,
+        brand=part.brand,
+        description=part.description,
+        category=part.category
+    )
 
 # ---------------- Current user's workshop customers endpoint ----------------
 async def get_current_user_workshop_customers(

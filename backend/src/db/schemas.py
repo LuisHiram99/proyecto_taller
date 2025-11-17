@@ -182,3 +182,51 @@ class WorkshopUpdate(BaseModel):
     address: Optional[str] = None
     opening_hours: Optional[str] = None
     closing_hours: Optional[str] = None
+
+#---------------------- Part and PartWorkshop ----------------------
+class PartBase(BaseModel):
+    part_name: str
+    brand: str
+    description: Optional[str] = None
+    category: Optional[str] = None
+
+class Part(PartBase):
+    part_id: int
+
+    model_config = {"from_attributes": True}
+
+class PartCreate(PartBase):
+    pass
+
+class PartUpdate(BaseModel):
+    part_name: Optional[str] = None
+    brand: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+
+# ---------------------- PartWorkshop ----------------------
+
+class PartWorkshopBase(BaseModel):
+    part_id: int
+    quantity: int
+    purchase_price: int
+    sale_price: int
+
+class PartWorkshop(PartBase):
+    part_id: int
+    workshop_id: int
+    quantity: int
+    purchase_price: int
+    sale_price: int
+
+    model_config = {"from_attributes": True}
+
+class PartWorkshopCreate(PartWorkshopBase):
+    pass
+
+class PartWorkshopUpdate(BaseModel):
+    quantity: Optional[int] = None
+    purchase_price: Optional[int] = None
+    sale_price: Optional[int] = None
+
+# --------------------- End of Part and PartWorkshop ----------------------
