@@ -1,32 +1,32 @@
 <script lang="ts">
-	import TableVehiculos from './TableVehiculos.svelte';
+	import type { CarWithOwner } from "$lib/types";
+	import TableVehiculos from "./TableVehiculos.svelte";
 
-	// MOCK DATA DE VEHÍCULOS
-	const vehiculos = [
+	// MOCK DATA temporal
+	let vehiculos: CarWithOwner[] = [
 		{
-			customer_car_id: 1,
-			license_plate: "VZA-334",
-			color: "Gris",
-			customer: { first_name: "Juan", last_name: "Pérez" },
-			car: { brand: "Nissan", model: "Versa", year: 2019 }
-		},
-		{
-			customer_car_id: 2,
-			license_plate: "YTR-921",
+			car_id: 1,
+			year: 2015,
+			brand: "Honda",
+			model: "Civic",
+			license_plate: "WER-123",
 			color: "Rojo",
-			customer: { first_name: "María", last_name: "López" },
-			car: { brand: "Mazda", model: "3", year: 2020 }
+			owner_name: "Carlos López",
+			customer_id: 10
 		},
 		{
-			customer_car_id: 3,
-			license_plate: "XSD-553",
+			car_id: 2,
+			year: 2018,
+			brand: "Toyota",
+			model: "Corolla",
+			license_plate: "XYZ-987",
 			color: "Blanco",
-			customer: { first_name: "Pedro", last_name: "Ramírez" },
-			car: { brand: "Toyota", model: "Corolla", year: 2018 }
+			owner_name: "María Pérez",
+			customer_id: 12
 		}
 	];
 </script>
 
-<div class="mt-4">
-	<TableVehiculos {vehiculos} />
-</div>
+<h1 class="text-xl font-semibold text-gray-700 mb-4">Vehículos registrados</h1>
+
+<TableVehiculos {vehiculos} />

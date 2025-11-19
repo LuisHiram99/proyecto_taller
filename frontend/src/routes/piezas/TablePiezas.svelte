@@ -22,7 +22,7 @@
 
 			<tbody>
 				{#each piezas as p, i}
-					<tr class={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+					<tr class={i % 2 === 0 ? "bg-white" : "bg-gray-200"}>
 						<td class="px-4 py-3">{p.part_id}</td>
 						<td class="px-4 py-3">{p.part_name}</td>
 						<td class="px-4 py-3">{p.brand}</td>

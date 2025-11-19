@@ -1,53 +1,40 @@
 <script lang="ts">
-	export let vehiculos = [];
+	import type { CarWithOwner } from "$lib/types";
+
+	export let vehiculos: CarWithOwner[] = [];
 </script>
 
 <div class="bg-white shadow-sm border border-gray-200 rounded-lg p-6">
-	<h2 class="text-lg font-semibold text-gray-700 mb-4">
-		Vehículos registrados
-	</h2>
+	<h2 class="text-lg font-semibold text-gray-700 mb-4">Lista de vehículos</h2>
 
 	<div class="overflow-x-auto">
-		<table class="w-full text-sm text-gray-700 border-collapse">
+		<table class="w-full text-sm text-gray-700">
 			<thead>
-				<tr class="bg-gray-100 text-gray-600 uppercase text-xs">
+				<tr class="bg-gray-100 text-xs text-gray-600 uppercase">
 					<th class="px-4 py-3 text-left">ID</th>
-					<th class="px-4 py-3 text-left">Cliente</th>
+					<th class="px-4 py-3 text-left">Año</th>
 					<th class="px-4 py-3 text-left">Marca</th>
 					<th class="px-4 py-3 text-left">Modelo</th>
-					<th class="px-4 py-3 text-left">Año</th>
-					<th class="px-4 py-3 text-left">Color</th>
 					<th class="px-4 py-3 text-left">Placas</th>
-					<th class="px-4 py-3 text-center">Acción</th>
+					<th class="px-4 py-3 text-left">Color</th>
+					<th class="px-4 py-3 text-left">Cliente</th>
 				</tr>
 			</thead>
 
 			<tbody>
 				{#each vehiculos as v, i}
 					<tr class={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-						<td class="px-4 py-3">{v.customer_car_id}</td>
-						<td class="px-4 py-3">{v.customer.first_name} {v.customer.last_name}</td>
-						<td class="px-4 py-3">{v.car.brand}</td>
-						<td class="px-4 py-3">{v.car.model}</td>
-						<td class="px-4 py-3">{v.car.year}</td>
-						<td class="px-4 py-3">{v.color}</td>
+						<td class="px-4 py-3">{v.car_id}</td>
+						<td class="px-4 py-3">{v.year}</td>
+						<td class="px-4 py-3">{v.brand}</td>
+						<td class="px-4 py-3">{v.model}</td>
 						<td class="px-4 py-3">{v.license_plate}</td>
-
-						<td class="px-4 py-3 text-center">
-							<button
-								class="w-7 h-7 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition"
-								title="Ver detalles"
-							>
-								<svg class="w-4 h-4 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-									<path
-										d="M10 3c-4.5 0-8 4-8 7s3.5 7 8 7 8-4 8-7-3.5-7-8-7zm0 12c-2.8 0-5-2.5-5-5s2.2-5 5-5 5 2.5 5 5-2.2 5-5 5zm0-8c-.6 0-1 .5-1 1v2c0 .6.4 1 1 1s1-.4 1-1V8c0-.5-.4-1-1-1z"
-									/>
-								</svg>
-							</button>
-						</td>
+						<td class="px-4 py-3">{v.color}</td>
+						<td class="px-4 py-3">{v.owner_name}</td>
 					</tr>
 				{/each}
 			</tbody>
 		</table>
 	</div>
 </div>
+	

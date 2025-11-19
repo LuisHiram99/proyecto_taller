@@ -60,7 +60,7 @@
 
 			<tbody>
 				{#each trabajos as t, i}
-					<tr class={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+					<tr class={i % 2 === 0 ? "bg-white" : "bg-gray-200"}>
 						<td class="px-4 py-3">{t.id}</td>
 						<td class="px-4 py-3">{t.fecha}</td>
 						<td class="px-4 py-3">{t.cliente}</td>

@@ -22,7 +22,7 @@
 
 			<tbody>
 				{#each talleres as s, i}
-					<tr class={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+					<tr class={i % 2 === 0 ? "bg-white" : "bg-gray-200"}>
 						<td class="px-4 py-3">{s.workshop_id}</td>
 						<td class="px-4 py-3">{s.workshop_name}</td>
 						<td class="px-4 py-3">{s.address}</td>
