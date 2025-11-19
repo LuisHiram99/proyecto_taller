@@ -1,0 +1,20 @@
+{
+	"/": [
+		"src/routes/+page.ts"
+	],
+	"/clientes": [
+		"src/routes/clientes/+page.ts"
+	],
+	"/empleados": [
+		"src/routes/empleados/+page.ts"
+	],
+	"/piezas": [
+		"src/routes/piezas/+page.ts"
+	],
+	"/talleres": [
+		"src/routes/talleres/+page.ts"
+	],
+	"/vehiculos": [
+		"src/routes/vehiculos/+page.ts"
+	]
+}
