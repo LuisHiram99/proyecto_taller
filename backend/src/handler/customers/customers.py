@@ -80,3 +80,28 @@ async def delete_customer(
     return await service.delete_customer(customer_id, db, current_user)
 
 
+@router.post("/customers/{customer_id}/cars", response_model=schemas.CustomerCarResponse)
+@limiter.limit("10/minute")
+async def add_car_to_customer(
+    request: Request,
+    customer_id: int,  # Add customer_id from URL path
+    car_data: schemas.CustomerCarAssign,  # Use CustomerCarAssign schema
+    current_user: user_dependency, 
+    db: AsyncSession = Depends(get_db)):
+    """
+    Add a car to a customer's profile
+    """
+    return await service.assign_customer_to_car(customer_id, car_data, db, current_user)
+
+@router.get("/customers/{customer_id}/cars", response_model=List[schemas.Car])
+@limiter.limit("10/minute")
+async def get_customer_cars(
+    request: Request,
+    customer_id: int, 
+    current_user: user_dependency, 
+    db: AsyncSession = Depends(get_db)):
+    """
+    Get all cars associated with a customer
+    """
+    return await service.get_cars_by_customer(customer_id, db, current_user)
+

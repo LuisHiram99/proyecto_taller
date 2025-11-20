@@ -159,7 +159,23 @@ class CustomerCarCreate(CustomerCarBase):
 class CustomerCarUpdate(CustomerCarBase):
     pass
 
+class CustomerCarResponse(BaseModel):
+    customer_car_id: int
+    customer_id: int
+    car_id: int
+    license_plate: str
+    color: Optional[str] = None
 
+    model_config = {"from_attributes": True}
+
+class CustomerCarAssign(BaseModel):
+    car_id: int
+    license_plate: str
+    color: Optional[str] = None
+
+
+
+# ---------------------- Workshop ----------------------
 class WorkshopBase(BaseModel):
     workshop_name: str
     address: Optional[str] = None
