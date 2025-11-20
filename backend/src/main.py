@@ -39,7 +39,7 @@ tags_metadata = [
     },
     {
         "name": "cars",
-        "description": "Operations related to car management. Only accessible by admin users.",
+        "description": "Operations related to car management.",
     },
     {
         "name": "workshops",

@@ -20,7 +20,7 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 async def create_car(
     request: Request,
     car: schemas.CarCreate, 
-    current_user: dict = Depends(admin_required),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)):
     """
     Create a new car
@@ -32,7 +32,7 @@ async def create_car(
 @limiter.limit("10/minute")
 async def read_cars(
     request: Request,
-    current_user: dict = Depends(admin_required), 
+    current_user: dict = Depends(get_current_user), 
     skip: int = 0, 
     limit: int = 100, 
     db: AsyncSession = Depends(get_db)):
@@ -47,7 +47,7 @@ async def read_cars(
 async def read_car(
     request: Request,
     car_id: int,
-    current_user: dict = Depends(admin_required), 
+    current_user: dict = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db),
     ):
     """
@@ -64,7 +64,7 @@ async def update_car(
     car_id: int,
     car: schemas.CarUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(admin_required)):
+    current_user: dict = Depends(get_current_user)):
     """
     Update an existing car (partial updates allowed)
     """
@@ -75,7 +75,7 @@ async def update_car(
 async def delete_car(
     request: Request,
     car_id: int,
-    current_user: dict = Depends(admin_required),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)):
     """
     Delete a car
