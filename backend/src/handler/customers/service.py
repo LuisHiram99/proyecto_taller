@@ -115,3 +115,61 @@ async def delete_customer(
         print(f"Database error in delete_customer: {e}")
         raise fetchErrorException
     
+async def assign_customer_to_car(
+        customer_id: int,  # Add this parameter
+        car_data: schemas.CustomerCarAssign,  # Use CustomerCarAssign instead
+        db: AsyncSession,
+        current_user: dict):
+    '''
+    Construct a query to assign a customer to a car
+    '''
+    try:
+        # Use async query
+        result = await db.execute(
+            select(models.Customer).filter(models.Customer.customer_id == customer_id)
+        )
+        customer = result.scalar_one_or_none()
+        if not customer:
+            raise notFoundException
+    
+        result = await db.execute(
+            select(models.Car).filter(models.Car.car_id == car_data.car_id)
+        )
+        car = result.scalar_one_or_none()
+        if not car:
+            raise notFoundException
+        
+        # Create relationship - use models.CustomerCar, not schemas
+        customer_car = models.CustomerCar(
+            customer_id=customer_id,
+            car_id=car_data.car_id,
+            license_plate=car_data.license_plate,
+            color=car_data.color
+        )
+
+        db.add(customer_car)
+        await db.commit()
+        await db.refresh(customer_car)
+        return customer_car
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in assign_customer_to_car: {e}")
+        raise fetchErrorException
+    
+async def get_cars_by_customer(
+        customer_id: int,
+        db: AsyncSession,
+        current_user: dict):
+    '''
+    Construct a query to get all cars associated with a customer
+    '''
+    try:
+        result = await db.execute(
+            select(models.Car).join(models.CustomerCar).filter(models.CustomerCar.customer_id == customer_id)
+        )
+        cars = result.scalars().all()
+        return cars
+    except Exception as e:
+        print(f"Database error in get_cars_by_customer: {e}")
+        raise fetchErrorException
