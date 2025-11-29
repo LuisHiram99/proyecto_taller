@@ -66,48 +66,6 @@ async def delete_current_user(request: Request, user: user_dependency, db: Async
 # ---------------- End of current user's info endpoints ----------------
 
 
-# ---------------- Current user's workshop related functions ----------------
-@router.post("/workshops/", response_model=schemas.Workshop, summary="Create workshop for current user")
-@limiter.limit("10/minute")
-async def create_current_user_workshop(
-    request: Request,
-    user: user_dependency,
-    workshop: schemas.WorkshopCreate,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Create a workshop associated with the currently authenticated user
-    """
-
-    return await service.create_current_user_workshop(user, workshop, db)
-
-@router.get("/workshops/", response_model=schemas.Workshop, summary="Get current user's workshop")
-@limiter.limit("10/minute") 
-async def read_current_user_workshop(
-    request: Request,
-    user: user_dependency,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Get the workshop associated with the currently authenticated user
-    """
-    return await service.get_current_user_workshop(user, db)
-
-@router.patch("/workshops/", response_model=schemas.Workshop, summary="Update current user's workshop")
-@limiter.limit("10/minute")
-async def update_current_user_workshop(
-    request: Request,
-    user: user_dependency,
-    workshop: schemas.WorkshopUpdate,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Update the workshop associated with the currently authenticated user
-    """
-    return await service.patch_current_user_workshop(user, workshop, db)
-
-# ---------------- End of current user's workshop related functions ----------------
-
 # ---------------- Current user's workshop parts endpoint ----------------
 @router.post("/workshops/parts", response_model=schemas.PartWorkshop, summary="Create part for current user's workshop")
 @limiter.limit("10/minute")

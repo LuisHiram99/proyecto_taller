@@ -5,10 +5,10 @@ from sqlalchemy import select, delete
 from auth.auth import get_current_user, pwd_context, admin_required, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
 from db import models, schemas
-import db
 from exceptions.exceptions import notFoundException, fetchErrorException
 from db.database import get_db
 
+from ..workshops.service import get_current_user_workshop_id
 # ---------------- Current user endpoints ----------------
 async def get_current_user_info(
     current_user: dict, 
@@ -125,87 +125,6 @@ async def delete_current_user_account(
 # ---------------- End of current user's info endpoints ----------------
 
 
-# ---------------- Current user's workshop related functions ----------------
-
-def get_current_user_workshop_id(user: dict) -> int:
-    """
-    Utility function to get the workshop ID of the current user
-    """
-    return user.get("workshop_id")
-
-async def create_current_user_workshop(
-    current_user: dict,
-    workshop: schemas.WorkshopCreate,
-    db: AsyncSession
-):
-    """
-    Create a workshop for the current logged-in user
-    """
-    if get_current_user_workshop_id(current_user) != 1:
-        raise HTTPException(status_code=400, detail="User already has a workshop")
-    
-    create_workshop_model = models.Workshop(
-        workshop_name=workshop.workshop_name,
-        address=workshop.address,
-        opening_hours=workshop.opening_hours,
-        closing_hours=workshop.closing_hours
-    )
-    db.add(create_workshop_model)
-    await db.commit()
-    await db.refresh(create_workshop_model)
-
-    # Update user's workshop_id
-    result = await db.execute(
-        select(models.User).filter(models.User.user_id == current_user["user_id"])
-    )
-    db_user = result.scalar_one_or_none()
-    db_user.workshop_id = create_workshop_model.workshop_id
-    await db.commit()
-    await db.refresh(db_user)
-    return create_workshop_model
-
-async def get_current_user_workshop(
-    current_user: dict,
-    db: AsyncSession
-):
-    """
-    Get the workshop associated with the current logged-in user
-    """
-    result = await db.execute(
-        select(models.Workshop).filter(models.Workshop.workshop_id == current_user["workshop_id"])
-    )
-    workshop = result.scalars().first()
-    if not workshop:
-        raise notFoundException("Workshop not found")
-    return workshop
-
-async def patch_current_user_workshop(
-    current_user: dict,
-    workshop_update: schemas.WorkshopUpdate,
-    db: AsyncSession
-):
-    """
-    Update the workshop associated with the current logged-in user
-    """
-    if get_current_user_workshop_id(current_user) == 1:
-        raise HTTPException(status_code=400, detail="User has no workshop to update")
-    
-    result = await db.execute(
-        select(models.Workshop).filter(models.Workshop.workshop_id == current_user["workshop_id"])
-    )
-    db_workshop = result.scalars().first()
-    if not db_workshop:
-        raise notFoundException(status_code=404, detail="Workshop not found")
-    
-    update_data = workshop_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_workshop, field, value)
-
-    await db.commit()
-    await db.refresh(db_workshop)
-    return db_workshop
-
-# ---------------- End of current user's workshop related functions ----------------
 # ---------------- Current user's workshop parts endpoint ----------------
 async def create_current_user_workshop_part(
     current_user: dict,
