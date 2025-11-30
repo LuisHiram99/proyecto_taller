@@ -72,18 +72,26 @@ async def read_customer(
         return await service.get_current_user_workshop_customer_by_id(customer_id, db, current_user)
     else: return await service.get_customer_by_id(customer_id, db, current_user)
 
-@router.put("/customers/{customer_id}", response_model=schemas.Customer)
+@router.patch("/customers/{customer_id}", response_model=schemas.Customer)
 @limiter.limit("10/minute")
 async def update_customer(
     request: Request,
     customer_id: int, 
-    customer_update: schemas.CustomerUpdate, 
+    customer_update: schemas.CustomerUpdate,
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user)):
     """
     Update a customer's information
+    - If user is admin -> can update any customer
+    - If user is not admin -> can update customer only if belongs to user's workshop
     """
-    return await service.update_customer(customer_id, customer_update, db, current_user)
+    if not is_admin(current_user):
+        update_data = customer_update.model_dump(exclude_unset=True)
+        if "workshop_id" in update_data:
+            raise HTTPException(status_code=403, detail="Non-admin users cannot update workshop_id")
+        return await service.update_current_user_workshop_customer_by_id(customer_id, customer_update, db, current_user)
+    else:
+        return await service.update_customer(customer_id, customer_update, db, current_user)
 
 @router.delete("/customers/{customer_id}", response_model=schemas.Customer)
 async def delete_customer(
@@ -93,8 +101,14 @@ async def delete_customer(
     current_user = Depends(get_current_user)):
     """
     Delete a customer
+    - If user is admin -> can delete any customer
+    - If user is not admin -> can delete customer only if belongs to user's workshop
     """
-    return await service.delete_customer(customer_id, db, current_user)
+
+    if not is_admin(current_user):
+        return await service.delete_current_user_workshop_customer(current_user, customer_id, db)
+    else:
+        return await service.delete_customer(customer_id, db, current_user)
 
 
 @router.post("/customers/{customer_id}/cars", response_model=schemas.CustomerCarResponse)
