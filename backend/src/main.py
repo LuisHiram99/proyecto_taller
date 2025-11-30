@@ -35,7 +35,7 @@ tags_metadata = [
     },
     {
         "name": "customers",
-        "description": "Operations related to customer management. Only accessible by admin users.",
+        "description": "Operations related to customer management.",
     },
     {
         "name": "cars",
@@ -43,7 +43,7 @@ tags_metadata = [
     },
     {
         "name": "workshops",
-        "description": "Operations related to workshop management. Only accessible by admin users.",
+        "description": "Operations related to workshop management.",
     },
 ]
 

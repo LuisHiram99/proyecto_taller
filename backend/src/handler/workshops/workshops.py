@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 # ---------------- All workshop endpoints ----------------
-@router.post("/workshops/", response_model=schemas.Workshop)
+@router.post("/workshops/", response_model=schemas.Workshop, summary="Create new Workshop")
 @limiter.limit("10/minute")
 async def create_workshop( 
     request: Request,
