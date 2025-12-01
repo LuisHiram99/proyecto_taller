@@ -12,34 +12,107 @@ from db.database import get_db
 
 router = APIRouter()
 
-user_dependency = Annotated[dict, Depends(get_current_user)]
-
 
 # ---------------- All workshop endpoints ----------------
-@router.post("/workshops/", response_model=schemas.Workshop)
+@router.post("/workshops/", response_model=schemas.Workshop, summary="Create new Workshop")
 @limiter.limit("10/minute")
 async def create_workshop( 
     request: Request,
     workshop: schemas.WorkshopCreate, 
     db: AsyncSession = Depends(get_db),
-    current_user = Depends(admin_required)):
+    current_user = Depends(get_current_user)):
     """
     Create a new workshop
     """
-    return await service.create_workshop(workshop, db, current_user)
+    if not is_admin(current_user):
+        return await service.create_current_user_workshop(current_user, workshop, db)
+    else:
+        return await service.create_workshop(workshop, db, current_user)
 
 @router.get("/workshops/", response_model=List[schemas.Workshop])
 @limiter.limit("10/minute")
 async def read_workshops(
     request: Request,
     db: AsyncSession = Depends(get_db), 
-    current_user = Depends(admin_required), 
+    current_user = Depends(get_current_user), 
     skip: int = 0, 
     limit: int = 100):
     """
     Get all workshops with pagination
     """
-    return await service.get_all_workshops(db, current_user, skip, limit)
+    if not is_admin(current_user):
+        return await service.get_current_user_workshop(current_user, db)
+    else:
+        return await service.get_all_workshops(db, current_user, skip, limit)
+
+# ---------------- Current user's workshop parts endpoint (must be before {workshop_id} routes) ----------------
+@router.post("/workshops/parts", response_model=schemas.PartWorkshop, summary="Create part for current user's workshop")
+@limiter.limit("10/minute")
+async def create_current_user_workshop_part(
+    request: Request,
+    part: schemas.PartWorkshopCreate,
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+    
+):
+    """
+    Create a part associated with the currently authenticated user's workshop
+    """
+    return await service.create_current_user_workshop_part(user, part, db)
+
+@router.get("/workshops/parts", response_model=List[schemas.PartWorkshop], summary="Get parts of current user's workshop")
+@limiter.limit("10/minute")
+async def read_current_user_workshop_parts(
+    request: Request,
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get the parts associated with the currently authenticated user's workshop
+    """
+    return await service.get_current_user_workshop_parts(user, db)
+
+@router.patch("/workshops/parts/{part_id}", response_model=schemas.PartWorkshop, summary="Update part of current user's workshop")
+@limiter.limit("10/minute")
+async def update_current_user_workshop_part(
+    request: Request,
+    part_id: int,
+    part_update: schemas.PartWorkshopUpdate,
+    user = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update a part associated with the currently authenticated user's workshop
+    """
+    return await service.update_current_user_workshop_part(user, part_id, part_update, db)
+
+@router.delete("/workshops/parts/{part_id}", response_model=schemas.PartWorkshop, summary="Delete part of current user's workshop")
+@limiter.limit("10/minute")
+async def delete_current_user_workshop_part(
+    request: Request,
+    part_id: int,
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete a part associated with the currently authenticated user's workshop
+    """
+    return await service.delete_current_user_workshop_part(user, part_id, db)
+
+# ---------------- End of current user's workshop parts endpoint ----------------
+    
+@router.patch("/workshops/me", response_model=schemas.Workshop)
+@limiter.limit("10/minute")
+async def update_current_user_workshop(
+    request: Request,
+    workshop_update: schemas.WorkshopUpdate, 
+    db: AsyncSession = Depends(get_db), 
+    current_user = Depends(get_current_user)
+):
+    """
+    Update the current user's workshop information
+    """
+    return await service.patch_current_user_workshop(current_user, workshop_update, db)
 
 @router.get("/workshops/{workshop_id}", response_model=schemas.Workshop)
 @limiter.limit("10/minute")
@@ -53,7 +126,7 @@ async def read_workshop(
     """
     return await service.get_workshop_by_id(workshop_id, db, current_user)
 
-@router.put("/workshops/{workshop_id}", response_model=schemas.Workshop)
+@router.patch("/workshops/{workshop_id}", response_model=schemas.Workshop)
 @limiter.limit("10/minute")
 async def update_workshop(
     request: Request,
@@ -78,3 +151,4 @@ async def delete_workshop(
     Delete a workshop
     """
     return await service.delete_workshop(workshop_id, db, current_user)
+

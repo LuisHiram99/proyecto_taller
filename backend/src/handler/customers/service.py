@@ -5,6 +5,7 @@ from sqlalchemy import select, delete
 from auth.auth import get_current_user, pwd_context, admin_required
 from db import models, schemas
 from exceptions.exceptions import notFoundException, fetchErrorException
+from ..workshops.service import get_current_user_workshop_id
 
 # ---------------- All customers functions ----------------
 async def create_customer(
@@ -25,6 +26,29 @@ async def create_customer(
         print(f"Database error in create_customer: {e}")
         raise fetchErrorException
 
+async def create_current_user_workshop_customer(
+    current_user: dict,
+    customer: schemas.CustomerCreate,
+    db: AsyncSession
+):
+    """
+    Create a customer for the current logged-in user's workshop
+    """
+    workshop_id = get_current_user_workshop_id(current_user)
+    create_customer_model = models.Customer(
+        first_name=customer.first_name,
+        last_name=customer.last_name,
+        phone=customer.phone,
+        email=customer.email,
+        workshop_id=workshop_id  # Set automatically from user's workshop
+    )
+
+    db.add(create_customer_model)
+    await db.commit()
+    await db.refresh(create_customer_model)
+    return create_customer_model
+
+
 async def get_all_customers(
         db: AsyncSession, 
         current_user: dict, 
@@ -42,10 +66,29 @@ async def get_all_customers(
         print(f"Database error in get_all_customers: {e}")
         raise fetchErrorException
     
+async def get_current_user_workshop_customers(
+    current_user: dict,
+    db: AsyncSession,
+    skip: int = 0,
+    limit: int = 100
+):
+    """
+    Get customers associated with the current logged-in user's workshop
+    """
+    workshop_id = get_current_user_workshop_id(current_user)
+    result = await db.execute(
+        select(models.Customer)
+        .filter(models.Customer.workshop_id == workshop_id)
+        .offset(skip)
+        .limit(limit)
+    )
+    customers = result.scalars().all()
+    return customers
+
 async def get_customer_by_id(
         customer_id: int,
         db: AsyncSession, 
-        current_user: dict):
+        current_user: dict) -> models.Customer:
     '''
     Construct a query to get a customer by ID
     '''
@@ -65,6 +108,32 @@ async def get_customer_by_id(
         print(f"Database error in get_customer_by_id: {e}")
         raise fetchErrorException
     
+async def get_current_user_workshop_customer_by_id(
+        customer_id: int, 
+        db: AsyncSession, 
+        current_user: dict) -> models.Customer:
+    """
+    Get a specific customer by ID for the current logged-in user's workshop
+    """
+    try: 
+        workshop_id = get_current_user_workshop_id(current_user)
+        result = await db.execute(
+            select(models.Customer)
+            .filter(models.Customer.customer_id == customer_id)
+            .filter(models.Customer.workshop_id == workshop_id)
+        )
+        db_customer = result.scalar_one_or_none()
+        # If customer not found or does not belong to user's workshop, raise 404
+        if db_customer is None:
+            raise notFoundException
+        return db_customer
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in get_current_user_workshop_customer_by_id: {e}")
+        raise fetchErrorException
+
+
 async def update_customer(
         customer_id: int, 
         customer_update: schemas.CustomerUpdate,
@@ -87,7 +156,40 @@ async def update_customer(
     except Exception as e:
         print(f"Database error in update_customer: {e}")
         raise fetchErrorException
-    
+
+async def update_current_user_workshop_customer_by_id(
+        customer_id: int, 
+        customer_update: schemas.CustomerUpdate,
+        db: AsyncSession, 
+        current_user: dict) -> models.Customer:
+    """
+    Get a specific customer by ID for the current logged-in user's workshop
+    """
+    try: 
+        workshop_id = get_current_user_workshop_id(current_user)
+        result = await db.execute(
+            select(models.Customer)
+            .filter(models.Customer.customer_id == customer_id)
+            .filter(models.Customer.workshop_id == workshop_id)
+        )
+        customer_data = result.scalar_one_or_none()
+        # If customer not found or does not belong to user's workshop, raise 404
+        if customer_data is None:
+            raise notFoundException
+        
+        update_data = customer_update.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(customer_data, key, value)
+
+        await db.commit()
+        await db.refresh(customer_data)
+        return customer_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in update_current_user_workshop_customer_by_id: {e}")
+        raise fetchErrorException
+
 async def delete_customer(
         customer_id: int,
         db: AsyncSession,
@@ -114,7 +216,34 @@ async def delete_customer(
     except Exception as e:
         print(f"Database error in delete_customer: {e}")
         raise fetchErrorException
-    
+
+async def delete_current_user_workshop_customer(
+    current_user: dict,
+    customer_id: int,
+    db: AsyncSession
+):
+    """
+    Delete a customer for the current logged-in user's workshop
+    """
+    workshop_id = get_current_user_workshop_id(current_user)
+
+    result = await db.execute(
+        select(models.Customer).filter(
+            models.Customer.customer_id == customer_id,
+            models.Customer.workshop_id == workshop_id
+        )
+    )
+    db_customer = result.scalar_one_or_none()
+    if db_customer is None:
+        raise notFoundException
+
+    await db.execute(
+        delete(models.Customer).where(models.Customer.customer_id == customer_id)
+    )
+    await db.commit()
+    return db_customer
+
+
 async def assign_customer_to_car(
         customer_id: int,  # Add this parameter
         car_data: schemas.CustomerCarAssign,  # Use CustomerCarAssign instead
