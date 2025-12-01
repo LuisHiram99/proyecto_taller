@@ -27,7 +27,6 @@ async def read_current_user(request: Request, user: user_dependency, db: AsyncSe
     """
     return await service.get_current_user_info(user, db)
 
-
 @router.patch("/", response_model=schemas.CurrentUserUpdate)
 @limiter.limit("10/minute")
 async def patch_current_user(
@@ -66,58 +65,3 @@ async def delete_current_user(request: Request, user: user_dependency, db: Async
 # ---------------- End of current user's info endpoints ----------------
 
 
-# ---------------- Current user's workshop parts endpoint ----------------
-@router.post("/workshops/parts", response_model=schemas.PartWorkshop, summary="Create part for current user's workshop")
-@limiter.limit("10/minute")
-async def create_current_user_workshop_part(
-    request: Request,
-    user: user_dependency,
-    part: schemas.PartWorkshopCreate,
-    db: AsyncSession = Depends(get_db)
-    
-):
-    """
-    Create a part associated with the currently authenticated user's workshop
-    """
-    return await service.create_current_user_workshop_part(user, part, db)
-
-@router.get("/workshops/parts", response_model=List[schemas.PartWorkshop], summary="Get parts of current user's workshop")
-@limiter.limit("10/minute")
-async def read_current_user_workshop_parts(
-    request: Request,
-    user: user_dependency,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Get the parts associated with the currently authenticated user's workshop
-    """
-    return await service.get_current_user_workshop_parts(user, db)
-
-@router.patch("/workshops/parts/{part_id}", response_model=schemas.PartWorkshop, summary="Update part of current user's workshop")
-@limiter.limit("10/minute")
-async def update_current_user_workshop_part(
-    request: Request,
-    user: user_dependency,
-    part_id: int,
-    part_update: schemas.PartWorkshopUpdate,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Update a part associated with the currently authenticated user's workshop
-    """
-    return await service.update_current_user_workshop_part(user, part_id, part_update, db)
-
-@router.delete("/workshops/parts/{part_id}", response_model=schemas.PartWorkshop, summary="Delete part of current user's workshop")
-@limiter.limit("10/minute")
-async def delete_current_user_workshop_part(
-    request: Request,
-    user: user_dependency,
-    part_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Delete a part associated with the currently authenticated user's workshop
-    """
-    return await service.delete_current_user_workshop_part(user, part_id, db)
-
-# ---------------- End of current user's workshop parts endpoint ----------------
