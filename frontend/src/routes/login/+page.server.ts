@@ -56,7 +56,7 @@ export const actions: Actions = {
 
       if (!res.ok) {
         return fail(res.status, {
-          error: 'Credenciales inválidas o error al iniciar sesión.',
+          error: 'Credenciales inválidas o error al iniciar sesión...',
           values: { email }
         });
       }
