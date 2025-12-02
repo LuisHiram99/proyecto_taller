@@ -8,7 +8,6 @@ from db import models, schemas
 from exceptions.exceptions import notFoundException, fetchErrorException
 from db.database import get_db
 
-from ..workshops.service import get_current_user_workshop_id
 # ---------------- Current user endpoints ----------------
 async def get_current_user_info(
     current_user: dict, 
