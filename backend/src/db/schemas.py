@@ -246,3 +246,27 @@ class PartWorkshopUpdate(BaseModel):
     sale_price: Optional[int] = None
 
 # --------------------- End of Part and PartWorkshop ----------------------
+
+# --------------------- Worker ----------------------
+class WorkerBase(BaseModel):
+    first_name: str
+    last_name: str
+    phone: Optional[str] = None
+    position: str
+    nickname: Optional[str] = None
+    workshop_id: int
+
+class Worker(WorkerBase):
+    worker_id : int
+
+    model_config = {"from_attributes": True}
+
+class workerCreate(WorkerBase):
+    pass
+
+class WorkerUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    position: Optional[str] = None
+    nickname: Optional[str] = None
