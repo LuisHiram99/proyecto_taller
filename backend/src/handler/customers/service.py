@@ -163,7 +163,7 @@ async def update_current_user_workshop_customer_by_id(
         db: AsyncSession, 
         current_user: dict) -> models.Customer:
     """
-    Get a specific customer by ID for the current logged-in user's workshop
+    Update a specific customer by ID for the current logged-in user's workshop
     """
     try: 
         workshop_id = get_current_user_workshop_id(current_user)

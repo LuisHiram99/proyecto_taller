@@ -99,7 +99,6 @@ async def delete_current_user_workshop_part(
     """
     return await service.delete_current_user_workshop_part(user, part_id, db)
 
-# ---------------- End of current user's workshop parts endpoint ----------------
     
 @router.patch("/workshops/me", response_model=schemas.Workshop)
 @limiter.limit("10/minute")
@@ -152,3 +151,4 @@ async def delete_workshop(
     """
     return await service.delete_workshop(workshop_id, db, current_user)
 
+# ---------------- End of current user's workshop parts endpoints ----------------

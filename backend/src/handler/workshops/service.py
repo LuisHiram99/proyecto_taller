@@ -142,6 +142,9 @@ async def create_current_user_workshop(
         select(models.User).filter(models.User.user_id == current_user["user_id"])
     )
     db_user = result.scalar_one_or_none()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
     db_user.workshop_id = create_workshop_model.workshop_id
     await db.commit()
     await db.refresh(db_user)
@@ -159,7 +162,7 @@ async def get_current_user_workshop(
     )
     workshop = result.scalars().first()
     if not workshop:
-        raise notFoundException("Workshop not found")
+        raise notFoundException
     return [workshop]
 
 async def patch_current_user_workshop(
@@ -178,7 +181,7 @@ async def patch_current_user_workshop(
     )
     db_workshop = result.scalars().first()
     if not db_workshop:
-        raise notFoundException(status_code=404, detail="Workshop not found")
+        raise HTTPException(status_code=404, detail="Workshop not found")
     
     update_data = workshop_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -190,7 +193,7 @@ async def patch_current_user_workshop(
 
 # ---------------- End of current user's workshop functions ----------------
 
-# ---------------- Current user's workshop parts endpoints ----------------
+# ---------------- Current user's workshop parts functions ----------------
 
 async def create_current_user_workshop_part(
     current_user: dict,

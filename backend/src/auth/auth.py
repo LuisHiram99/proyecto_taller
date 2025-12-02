@@ -65,7 +65,7 @@ async def create_user(user: CreateUserRequest, db: db_dependency):
     db.add(create_user_model)
     await db.commit()
     await db.refresh(create_user_model)
-    return create_user_model
+    return {'message': 'User created successfully'}
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: db_dependency, form_data: OAuth2PasswordRequestForm = Depends()):
