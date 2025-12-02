@@ -1,0 +1,34 @@
+{
+	"/": [
+		"src/routes/+page.ts",
+		"src/routes/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/clientes": [
+		"src/routes/clientes/+page.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/empleados": [
+		"src/routes/empleados/+page.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/login": [
+		"src/routes/login/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/logout": [
+		"src/routes/logout/+server.ts"
+	],
+	"/piezas": [
+		"src/routes/piezas/+page.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/talleres": [
+		"src/routes/talleres/+page.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/vehiculos": [
+		"src/routes/vehiculos/+page.ts",
+		"src/routes/+layout.server.ts"
+	]
+}
