@@ -279,4 +279,3 @@ class WorkerUpdate(BaseModel):
     phone: Optional[str] = None
     position: Optional[str] = None
     nickname: Optional[str] = None
-    workshop_id: Optional[int] = None

@@ -65,6 +65,96 @@ async def get_all_workers_for_current_user_workshop(
     except Exception as e:
         print(f"Database error in get_all_workers_for_current_user_workshop: {e}")
         raise fetchErrorException
+    
+async def get_worker_by_id(
+        worker_id: int,
+        current_user: dict,
+        db: AsyncSession,
+):
+    try:
+        workshop_id = get_current_user_workshop_id(current_user)
+        result = await db.execute(
+            select(models.Worker)
+            .filter(models.Worker.workshop_id == workshop_id)
+            .filter(models.Worker.worker_id == worker_id)
+        )
+
+        db_worker = result.scalar_one_or_none()
+        if db_worker is None:
+            raise notFoundException
+        return db_worker
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error while retrieving worker information: {e}")
+        raise fetchErrorException
+    
+
+async def update_worker_info(
+    worker_id: int,
+    worker_update: schemas.WorkerUpdate,
+    current_user: dict,
+    db: AsyncSession
+):
+    """
+    Update a worker's information for the current user's workshop
+    """
+    try:
+        workshop_id = get_current_user_workshop_id(current_user)
+        result = await db.execute(
+            select(models.Worker).where(
+                models.Worker.worker_id == worker_id,
+                models.Worker.workshop_id == workshop_id
+            )
+        )
+        db_worker = result.scalars().first()
+        if not db_worker:
+            raise notFoundException("Worker not found")
+
+        update_data = worker_update.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(db_worker, field, value)
+
+        await db.commit()
+        await db.refresh(db_worker)
+        return db_worker
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in update_worker_info: {e}")
+        raise fetchErrorException
+    
+
+async def delete_worker_info(
+    worker_id: int,
+    current_user: dict,
+    db: AsyncSession
+):
+    """
+    delete a worker's information for the current user's workshop
+    """
+    try:
+        workshop_id = get_current_user_workshop_id(current_user)
+        result = await db.execute(
+            select(models.Worker).where(
+                models.Worker.worker_id == worker_id,
+                models.Worker.workshop_id == workshop_id
+            )
+        )
+
+        db_customer = result.scalars().first()
+        if db_customer is None:
+            raise notFoundException
+        await db.execute(
+            delete(models.Worker).where(models.Worker.worker_id == worker_id)
+        )
+        await db.commit()
+        return db_customer
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Database error in delete_worker_info: {e}")
+        raise fetchErrorException
 
 # ---------------- END Current user's info functions ----------------
 
