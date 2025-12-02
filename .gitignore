@@ -4,7 +4,10 @@
 *.code-workspace
 
 # Environment variables
-backend/src/.env
+.env
+.env.*
+*.env
+**/.env
 
 # Database
 *.sqlite3
