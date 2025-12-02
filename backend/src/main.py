@@ -14,6 +14,7 @@ from handler.customer_car import customer_car
 from handler.current_user import current_user
 from handler.rate_limiter import limiter
 from handler.parts import parts
+from handler.workers import workers
 
 
 description = """
@@ -78,6 +79,7 @@ app.include_router(customers.router, prefix=api_route, tags=["customers"])
 app.include_router(cars.router, prefix=api_route, tags=["cars"])
 #app.include_router(customer_car.router, prefix=api_route, tags=["customer_car"])
 app.include_router(workshops.router, prefix=api_route, tags=["workshops"])
+app.include_router(workers.router, prefix=api_route, tags=["workers"])
 app.include_router(parts.router, prefix=api_route, tags=["parts"])
 
 @app.get("/")

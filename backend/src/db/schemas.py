@@ -258,11 +258,20 @@ class WorkerBase(BaseModel):
 
 class Worker(WorkerBase):
     worker_id : int
+    created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 
-class workerCreate(WorkerBase):
-    pass
+class WorkerCreate(WorkerBase):
+    workshop_id: int
+
+class WorkerCreateForWorkshop(BaseModel):
+    first_name: str
+    last_name: str
+    phone: Optional[str] = None
+    position: str
+    nickname: Optional[str] = None
 
 class WorkerUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -270,3 +279,4 @@ class WorkerUpdate(BaseModel):
     phone: Optional[str] = None
     position: Optional[str] = None
     nickname: Optional[str] = None
+    workshop_id: Optional[int] = None

@@ -68,6 +68,8 @@ class Worker(Base):
     position = Column(String(100), nullable=False)
     nickname = Column(String(50))
     workshop_id = Column(Integer, ForeignKey("workshops.workshop_id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now(), server_default=func.now())
 
 
 class Car(Base):
