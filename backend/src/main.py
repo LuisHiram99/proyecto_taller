@@ -84,4 +84,4 @@ app.include_router(parts.router, prefix=api_route, tags=["parts"])
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Taller API"}
+    return {"message": "Welcome to AutoBase API"}
