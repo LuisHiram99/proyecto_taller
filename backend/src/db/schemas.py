@@ -302,6 +302,18 @@ class Job(JobBase):
 
     model_config = {"from_attributes": True}
 
+class JobWithCarInfo(JobBase):
+    job_id: int
+    workshop_id: int
+    customer_car_id: int
+    car_brand: str
+    car_model: str
+    car_year: int
+    license_plate: str
+    car_color: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
 class JobCreate(BaseModel):
     customer_car_id: int
     invoice: str
